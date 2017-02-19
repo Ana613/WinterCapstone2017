@@ -1,4 +1,5 @@
 
+
 # WinterCapstone2017
 Ryerson Capstone Project
 
@@ -42,6 +43,33 @@ tdata_TB_df = twListToDF(RS_TrinityBellwoods)
 tdata_EY_df = twListToDF(RS_EastYork)
 tdata_P_df = twListToDF(RS_PortLands)
 tdata_TC_df = twListToDF(RS_TorontoCity)
+
+#Chek the data 
+class(tdata_ET_df) 
+class(tdata_HP_df)
+class(tdata_NY_df)
+class(tdata_TB_df)
+class(tdata_EY_df)
+class(tdata_P_df)
+class(tdata_TC_df)
+
+#Summary
+summary(tdata_ET_df)
+summary(tdata_HP_df)
+summary(tdata_NY_df)
+summary(tdata_TB_df)
+summary(tdata_EY_df)
+summary(tdata_P_df)
+summary(tdata_TC_df)
+
+#str
+str(tdata_ET_df)
+str(tdata_HP_df)
+str(tdata_NY_df)
+str(tdata_TB_df)
+str(tdata_EY_df)
+str(tdata_P_df)
+str(tdata_TC_df)
 
 
 
