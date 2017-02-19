@@ -97,6 +97,7 @@ length(tdata_NY_df)
 length(tdata_TB_df)
 length(tdata_EY_df)
 length(tdata_P_df)
+
 length(tdata_TC_df)
 
 #dim
@@ -134,6 +135,24 @@ sapply(tdata_TB_df, class)
 sapply(tdata_EY_df, class)
 sapply(tdata_P_df, class)
 sapply(tdata_TC_df, class)
+
+#keep a copy in the personal hard disk
+et<-data.frame(tdata_ET_df)
+hp<-data.frame(tdata_HP_df)
+ny<-data.frame(tdata_NY_df)
+tb<-data.frame(tdata_TB_df)
+ey<-data.frame(tdata_EY_df)
+p<-data.frame(tdata_P_df)
+tc<-data.frame(tdata_TC_df)
+
+write.csv(et.df, file="C:/Users/.../a/et.csv")
+write.csv(hp.df, file="C:/Users/.../a/hp.csv")
+write.csv(ny.df, file="C:/Users/.../a/ny.csv")
+write.csv(tb.df, file="C:/Users/.../a/tb.csv")
+write.csv(ey.df, file="C:/Users/.../a/ey.csv")
+write.csv(p.df, file="C:/Users/.../a/p.csv")
+write.csv(tc.df, file="C:/Users/.../a/tc.csv")
+
 
 
 
