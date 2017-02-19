@@ -2,14 +2,55 @@
 # WinterCapstone2017
 Ryerson Capstone Project
 
-ibrary(streamR)
-tweets_location <- filterStream(file = " ", # redirect to the console
-                               locations = c(-180,-90,180,90), # geo-tweets
-                               timeout = 60, # open stream for '60' secs
-                               oauth = my.oauth) # use my credentials
-                               
-#tweets_location is a JSON string. 
-#To parse into tabular format, we use streamR::parseTweets().  
-tweets_location <- parseTweets(tweets_location)
-#taking just the data needed
-tweets_location <- tweets_location[, c("lang", "lat", "lon", "text")]
+#Taking the tweets  by region
+#Etobicoke, Toronto, ON, Canada
+#Latitude and longitude coordinates are: 43.620495, -79.513199.
+RS_Etobicoke = searchTwitter("Real Estate", geocode="43.620495,-79.513199,50mi",lang = "en" , n=1000)
+RS_Etobicoke
+head(RS_Etobicoke)
+#High Park, Toronto, ON, Canada
+#43.645485,-79.464752
+RS_HighPark = searchTwitter("Real Estate", geocode="43.645485,-79.464752,50mi", lang = "en" , n=1000)
+RS_HighPark
+#North York, Toronto, ON, Canada
+#43.761539, -79.411079
+RS_NorthYork= searchTwitter("Real Estate", geocode="43.761539,-79.411079,50mi", lang = "en" , n=1000)
+RS_NorthYork
+#Trinity Bellwoods Park, Toronto, ON, Canada
+#43.646355,-79.413582
+RS_TrinityBellwoods= searchTwitter("Real Estate", geocode="43.646355,-79.413582,50mi", lang = "en" , n=1000)
+RS_TrinityBellwoods
+#East York, Toronto, ON, Canada
+#43.691200,-79.341667
+RS_EastYork= searchTwitter("Real Estate", geocode="43.691200,-79.341667,50mi", lang = "en" , n=1000)
+RS_EastYork
+#Port Lands, Toronto, ON, Canada
+#43.649738,-79.339485
+RS_PortLands= searchTwitter("Real Estate", geocode="43.649738,-79.339485,50mi", lang = "en" , n=1000)
+RS_PortLands
+#Toronto City Hall, Toronto, ON, Canada
+#43.653908,-79.384293
+RS_TorontoCity= searchTwitter("Real Estate", geocode="43.653908,-79.384293,50mi", lang = "en" , n=1000)
+RS_TorontoCity
+
+#twListToDF: Convert twitter data into a data frame
+# convert tweets into a data frame
+tdata_ET_df = twListToDF(RS_Etobicoke)
+tdata_HP_df = twListToDF(RS_HighPark)
+tdata_NY_df = twListToDF(RS_NorthYork)
+tdata_TB_df = twListToDF(RS_TrinityBellwoods)
+tdata_EY_df = twListToDF(RS_EastYork)
+tdata_P_df = twListToDF(RS_PortLands)
+tdata_TC_df = twListToDF(RS_TorontoCity)
+
+
+
+
+
+
+
+
+
+
+
+
