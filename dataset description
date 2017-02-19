@@ -1,2 +1,15 @@
+
 # WinterCapstone2017
 Ryerson Capstone Project
+
+ibrary(streamR)
+tweets_location <- filterStream(file = " ", # redirect to the console
+                               locations = c(-180,-90,180,90), # geo-tweets
+                               timeout = 60, # open stream for '60' secs
+                               oauth = my.oauth) # use my credentials
+                               
+#tweets_location is a JSON string. 
+#To parse into tabular format, we use streamR::parseTweets().  
+tweets_location <- parseTweets(tweets_location)
+#taking just the data needed
+tweets_location <- tweets_location[, c("lang", "lat", "lon", "text")]
