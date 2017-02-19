@@ -1,9 +1,10 @@
 
 
+
 # WinterCapstone2017
 Ryerson Capstone Project
 
-#Taking the tweets  by region
+#Initially it will extract 1000 tweets  by region with a radio of 50 milles
 #Etobicoke, Toronto, ON, Canada
 #Latitude and longitude coordinates are: 43.620495, -79.513199.
 RS_Etobicoke = searchTwitter("Real Estate", geocode="43.620495,-79.513199,50mi",lang = "en" , n=1000)
@@ -70,6 +71,71 @@ str(tdata_TB_df)
 str(tdata_EY_df)
 str(tdata_P_df)
 str(tdata_TC_df)
+
+#head
+head(tdata_ET_df)
+head(tdata_HP_df)
+head(tdata_NY_df)
+head(tdata_TB_df)
+head(tdata_EY_df)
+head(tdata_P_df)
+head(tdata_TC_df)
+
+#tail
+tail(tdata_ET_df)
+tail(tdata_HP_df)
+tail(tdata_NY_df)
+tail(tdata_TB_df)
+tail(tdata_EY_df)
+tail(tdata_P_df)
+tail(tdata_TC_df)
+
+#length
+length(tdata_ET_df)
+length(tdata_HP_df)
+length(tdata_NY_df)
+length(tdata_TB_df)
+length(tdata_EY_df)
+length(tdata_P_df)
+length(tdata_TC_df)
+
+#dim
+dim(tdata_ET_df)
+dim(tdata_HP_df)
+dim(tdata_NY_df)
+dim(tdata_TB_df)
+dim(tdata_EY_df)
+dim(tdata_P_df)
+dim(tdata_TC_df)
+
+#nrow
+nrow(tdata_ET_df)
+nrow(tdata_HP_df)
+nrow(tdata_NY_df)
+nrow(tdata_TB_df)
+nrow(tdata_EY_df)
+nrow(tdata_P_df)
+nrow(tdata_TC_df)
+
+#ncol
+ncol(tdata_ET_df)
+ncol(tdata_HP_df)
+ncol(tdata_NY_df)
+ncol(tdata_TB_df)
+ncol(tdata_EY_df)
+ncol(tdata_P_df)
+ncol(tdata_TC_df)
+
+#data type of each feauture
+sapply(tdata_ET_df, class)
+sapply(tdata_HP_df, class)
+sapply(tdata_NY_df, class)
+sapply(tdata_TB_df, class)
+sapply(tdata_EY_df, class)
+sapply(tdata_P_df, class)
+sapply(tdata_TC_df, class)
+
+
 
 
 
