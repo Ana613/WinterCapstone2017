@@ -1,6 +1,4 @@
 
-
-
 # WinterCapstone2017
 Ryerson Capstone Project
 
@@ -184,7 +182,7 @@ tdm_ET = TermDocumentMatrix(corpus_ET,
                                         removeNumbers = TRUE,tolower = TRUE))
 
 
-Step 4: Obtain words and their frequencies
+#Step 4: Obtain words and their frequencies
 
 # define tdm_ET as matrix
 m_ET = as.matrix(tdm_ET)
@@ -194,10 +192,23 @@ word_freqs_ET = sort(rowSums(m_ET), decreasing=TRUE)
 dm_ET = data.frame(word=names(word_freqs_ET), freq=word_freqs_ET)
 
 
-Step 5:  plot the wordcloud
+#Step 5:  plot the wordcloud
 
 # plot wordcloud
 wordcloud(dm_E$word, dm_E$freq, random.order=FALSE, colors=brewer.pal(8, "Dark2"))
+
+#Show frequent words
+freq.term<-findFreqTerms(dm_E$word, lowfreq=15)
+
+#PLot
+
+install.packages("ggplot2", dependencies=TRUE) 
+ggplot(dm_E, ae(x=term, y=freq)) + geom_bar(stat = 'identity")+
+xlab("Terms")+ylab("Count") + coord_flip()
+
+
+
+
 
 
 
