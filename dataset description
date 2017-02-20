@@ -97,7 +97,6 @@ length(tdata_NY_df)
 length(tdata_TB_df)
 length(tdata_EY_df)
 length(tdata_P_df)
-
 length(tdata_TC_df)
 
 #dim
@@ -136,25 +135,69 @@ sapply(tdata_EY_df, class)
 sapply(tdata_P_df, class)
 sapply(tdata_TC_df, class)
 
-#keep a copy in the personal hard disk
-et<-data.frame(tdata_ET_df)
-hp<-data.frame(tdata_HP_df)
-ny<-data.frame(tdata_NY_df)
-tb<-data.frame(tdata_TB_df)
-ey<-data.frame(tdata_EY_df)
-p<-data.frame(tdata_P_df)
-tc<-data.frame(tdata_TC_df)
 
-write.csv(et.df, file="C:/Users/.../a/et.csv")
-write.csv(hp.df, file="C:/Users/.../a/hp.csv")
-write.csv(ny.df, file="C:/Users/.../a/ny.csv")
-write.csv(tb.df, file="C:/Users/.../a/tb.csv")
-write.csv(ey.df, file="C:/Users/.../a/ey.csv")
-write.csv(p.df, file="C:/Users/.../a/p.csv")
-write.csv(tc.df, file="C:/Users/.../a/tc.csv")
+#MAKe a wordcloud
+#Step 1:Load all the required packages
+
+install.packages("twitteR", dependencies=TRUE) 
+install.packages("tm", dependencies=TRUE) 
+install.packages("wordcloud", dependencies=TRUE) 
+install.packages("RColorBrewer", dependencies=TRUE) 
 
 
+library(twitteR)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
 
+# data (from twitter, no dataframe)
+data_ET<-RS_Etobicoke
+data_HP<-RS_HighPark
+data_NY<-RS_NorthYork
+data_TB<-RS_TrinityBellwoods
+data_EY<-RS_EastYork
+data_P<-RS_PortLands
+data_TC<-RS_TorontoCity
+
+#FOR Etobicoke
+
+#Step 2:Extract the text from the tweets in a vector
+
+text_ET = sapply(data_ET, function(x) x$getText())
+
+
+#Step 3:Construct the lexical Corpus and the Term Document Matrix
+#use the function Corpus to create the corpus, 
+#and the function VectorSource to indicate that 
+#the text is in the character vector mach_text. 
+#In order to create the term-document matrix 
+#apply different transformation such as 
+#removing numbers, punctuation symbols, lower case, etc.
+
+# create a corpus
+corpus_ET = Corpus(VectorSource(text_ET))
+
+# create document term matrix applying some transformations
+tdm_ET = TermDocumentMatrix(corpus_ET,
+                         control = list(removePunctuation = TRUE,
+                                        stopwords = c("Real", "State", stopwords("english")),
+                                        removeNumbers = TRUE,tolower = TRUE))
+
+
+Step 4: Obtain words and their frequencies
+
+# define tdm_ET as matrix
+m_ET = as.matrix(tdm_ET)
+# get word counts in decreasing order
+word_freqs_ET = sort(rowSums(m_ET), decreasing=TRUE)
+# create a data frame with words and their frequencies
+dm_ET = data.frame(word=names(word_freqs_ET), freq=word_freqs_ET)
+
+
+Step 5:  plot the wordcloud
+
+# plot wordcloud
+wordcloud(dm_E$word, dm_E$freq, random.order=FALSE, colors=brewer.pal(8, "Dark2"))
 
 
 
