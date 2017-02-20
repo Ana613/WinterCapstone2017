@@ -4,9 +4,9 @@ library(twitteR)
 #Etobicoke tweets
 #convert to data frame
 
-data_ET_df = twListToDF(RS_Etobicoke)
-#Clean data 
-tweet_txt = train_ET$text
+tweet_E  = twListToDF(RS_Etobicoke)
+#Clean data in feature text
+tweet_txt = tweet_E$text
 # remove retweet entities
 tweet_txt = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", tweet_txt)
 # remove at people
