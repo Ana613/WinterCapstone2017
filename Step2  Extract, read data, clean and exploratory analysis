@@ -1,0 +1,1246 @@
+#library
+library(twitteR)
+library(RCurl)
+
+#Consumer_Key<-"xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+#Consumer_Secret<-"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+#access_token <- "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+#access_token_secret <- "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+#setup_twitter_oauth(Consumer_Key,Consumer_Secret, access_token,access_token_secret)
+
+2
+
+# Search twitter, convert to data frame and keep in the computer disk
+
+#Etobicoke
+#etobicoke<-c(43.620495,-79.513199,"Etobicoke",  e_hp)
+#Real Estate
+#RS_etobicoke<-searchTwitter("Real Estate" , geocode="43.620495,-79.513199,1.72mi",lang = "en" , n=2000)
+#RS_etobicoke <- twListToDF(RS_etobicoke)
+#write.csv(RS_etobicoke, file="C:/../RS_etobicoke.csv")
+#Realtor
+#Realtor_etobicoke<-searchTwitter("Realtor" , geocode="43.620495,-79.513199,1.72mi",lang = "en" , n=1000)
+#Realtor_etobicoke<-twListToDF(Realtor_etobicoke)
+#write.csv(Realtor_etobicoke, file="C:/../Realtor_etobicoke.csv")
+
+
+#High Park
+#highpark<-c(43.645485,-79.464752,"Highpark",e_hp)
+#Real Estate
+#RS_highpark<-searchTwitter("Real Estate" , geocode="43.645485,-79.464752,1.72mi",lang = "en" , n=2000)
+#RS_highpark <-twListToDF(RS_highpark)
+#write.csv(RS_highpark, file="C:/../RS_highpark.csv")
+#Realtor
+#Realtor_highpark<-searchTwitter("Realtor" , geocode="43.645485,-79.464752,1.72mi",lang = "en" , n=1000)
+#Realtor_highpark<-twListToDF(Realtor_highpark)
+#write.csv(Realtor_highpark, file="C:/../Realtor_highpark.csv")
+
+
+#Toronto
+#toronto<-c(43.653908,-79.384293,"Toronto", t_hp)
+#Real Estate
+#RS_toronto<-searchTwitter("Real Estate", geocode="43.653908,-79.384293,2.61mi", lang = "en" , n=2000)
+#RS_toronto <-twListToDF(RS_Toronto)
+#write.csv(RS_toronto, file="C:/../RS_toronto.csv")
+#Realtor
+#Realtor_toronto<-searchTwitter("Realtor", geocode="43.653908,-79.384293,2.61mi", lang = "en" , n=1000)
+#realtor_toronto<- twListToDF(Realtor_toronto)
+#write.csv(Realtor_toronto, file="C:/../Realtor_toronto.csv")
+
+
+#East York
+#eastyork<-c(43.691200,-79.341667,"EastYork", t_eay)
+#Real Estate
+#RS_eastyork<-searchTwitter("Real Estate" , geocode="43.691200,-79.341667,2.93mi",lang = "en" , n=2000)
+#RS_eastyork <-twListToDF(RS_eastyork)
+#write.csv(RS_eastyork, file="C:/../RS_eastyork.csv")
+#Realtor
+#Realtor_eastyork<-searchTwitter("Realtor" , geocode="43.691200,-79.341667,2.93mi",lang = "en" , n=1000)
+#Realtor_eastyork <-twListToDF(Realtor_eastyork)
+#write.csv(Realtor_eastyork, file="C:/../Realtor_eastyork.csv")
+
+
+#North York
+#northyork<-c(43.761539,-79.411079,"Northyork", t_eay)
+#Real Estate
+#RS_northyork<-searchTwitter("Real Estate" , geocode="43.761539,-79.411079,2.93mi",lang = "en" , n=2000)
+#RS_northyork<-twListToDF(RS_northyork)
+#write.csv(RS_northyork, file="C:/../RS_northyork.csv")
+#Realtor
+#Realtor_northyork<-searchTwitter("Realtor" , geocode="43.761539,-79.411079,2.93mi",lang = "en" , n=1000)
+#Realtor_northyork <-twListToDF(Realtor_northyork)
+#write.csv(Realtor_northyork, file="C:/../Realtor_northyork.csv")
+
+
+
+
+
+#READ THE DATA
+#For Real Estate data
+RS_etobicoke<-read.csv(file="C:/../RS_etobicoke.csv"
+                       ,header=T, stringsAsFactors = FALSE)
+RS_highpark<-read.csv(file="C:/../RS_highpark.csv"
+                      ,header=T, stringsAsFactors = FALSE)
+RS_toronto<-read.csv(file="C:/../RS_toronto.csv"
+                     ,header=T, stringsAsFactors = FALSE)
+RS_eastyork<-read.csv(file="C:/../RS_eastyork.csv"
+                      ,header=T, stringsAsFactors = FALSE)
+RS_northyork<-read.csv(file="C:/../RS_northyork.csv"
+                       ,header=T, stringsAsFactors = FALSE)
+
+#For Realtor data
+Realtor_etobicoke<-read.csv(file="C:/../Realtor_etobicoke.csv"
+                            ,header=T, stringsAsFactors = FALSE)
+Realtor_highpark<-read.csv(file="C:/../Realtor_highpark.csv"
+                           ,header=T, stringsAsFactors = FALSE)
+Realtor_toronto<-read.csv(file="C:/../Realtor_toronto.csv"
+                          ,header=T, stringsAsFactors = FALSE)
+Realtor_eastyork<-read.csv(file="C:/../Realtor_eastyork.csv"
+                           ,header=T, stringsAsFactors = FALSE)
+Realtor_northyork<-read.csv(file="C:/../Realtor_northyork.csv"
+                            ,header=T, stringsAsFactors = FALSE)
+
+#erase extra columns
+RS_etobicoke <- subset(RS_etobicoke, select = -c(X.1, X))
+RS_highpark <- subset(RS_highpark, select = -c(X))
+RS_toronto <- subset(RS_toronto, select = -c(X))
+RS_eastyork <- subset(RS_eastyork, select = -c(X))
+RS_northyork <- subset(RS_northyork, select = -c(X))
+
+Realtor_etobicoke <- subset(Realtor_etobicoke, select = -c(X))
+Realtor_highpark <- subset(Realtor_highpark, select = -c(X))
+Realtor_toronto <- subset(Realtor_toronto, select = -c(X))
+Realtor_eastyork <- subset(Realtor_eastyork, select = -c(X))
+Realtor_northyork <- subset(Realtor_northyork, select = -c(X))
+
+#Join the 5 data frames in a whole data frame
+#Get an idea of devices people use to connect to twitter
+RS_total_Source= rbind(RS_etobicoke, RS_highpark, RS_toronto, RS_eastyork, RS_northyork)
+attach(RS_total_Source)
+total_sourc <- sapply(RS_total_Source, function(x) statusSource) 
+total_sourc <- gsub("</a>", "", total_sourc) 
+total_sourc <- strsplit(total_sourc, ">") 
+total_sourc <- sapply(total_sourc, function(x) ifelse(length(x) > 1, x[2], x[1])) 
+total_source_table = table(total_sourc) 
+
+par(mar=c(1,1,0,0))
+pie(total_source_table[total_source_table > 2000])
+detach(RS_total_Source)
+
+Realtor_total_Source= rbind(Realtor_etobicoke, Realtor_highpark, Realtor_toronto, Realtor_eastyork, Realtor_northyork)
+attach(Realtor_total_Source)
+total_sourc_r <- sapply(Realtor_total_Source, function(x) statusSource) 
+total_sourc_r <- gsub("</a>", "", total_sourc_r) 
+total_sourc_r <- strsplit(total_sourc_r, ">") 
+total_sourc_r <- sapply(total_sourc_r, function(x) ifelse(length(x) > 1, x[2], x[1])) 
+total_source_table_r = table(total_sourc_r) 
+par(mar=c(1,1,0,0))
+pie(total_source_table_r[total_source_table_r> 1000])
+detach(Realtor_total_Source)
+#less than a third of total data comes from a movile device.
+
+
+#Create a data frames with two feautures: text and location
+#For Real State RS data
+RS_etobicoke<- data.frame(RS_etobicoke$text, "RS_etobicoke")
+colnames(RS_etobicoke) <- c("text","location")
+RS_etobicoke$text<- as.character(RS_etobicoke$text, stringsAsFactors=FALSE)
+RS_etobicoke$location<- factor(RS_etobicoke$location)
+
+RS_highpark<- data.frame(RS_highpark$text, "RS_highpark")
+colnames(RS_highpark) <- c("text","location")
+RS_highpark$text<- as.character(RS_highpark$text, stringsAsFactors=FALSE)
+RS_highpark$location<- factor(RS_highpark$location)
+
+RS_toronto <- data.frame(RS_toronto$text, "RS_toronto")
+colnames(RS_toronto) <- c("text","location")
+RS_toronto$text<- as.character(RS_toronto$text, stringsAsFactors=FALSE)
+RS_toronto$location<- factor(RS_toronto$location)
+
+RS_eastyork<- data.frame(RS_eastyork$text, "RS_eastyork")
+colnames(RS_eastyork) <- c("text","location")
+RS_eastyork$text<- as.character(RS_eastyork$text, stringsAsFactors=FALSE)
+RS_eastyork$location<- factor(RS_eastyork$location)
+
+RS_northyork<- data.frame(RS_northyork$text, "RS_northyork")
+colnames(RS_northyork) <- c("text","location")
+RS_northyork$text<- as.character(RS_northyork$text, stringsAsFactors=FALSE)
+RS_northyork$location<- factor(RS_northyork$location)
+
+
+
+#For Realtor data
+Realtor_etobicoke<- data.frame(Realtor_etobicoke$text, "Realtor_etobicoke")
+colnames(Realtor_etobicoke) <- c("text","location")
+Realtor_etobicoke$text<- as.character(Realtor_etobicoke$text, stringsAsFactors=FALSE)
+Realtor_etobicoke$location<- factor(Realtor_etobicoke$location)
+
+Realtor_highpark<- data.frame(Realtor_highpark$text, "Realtor_highpark")
+colnames(Realtor_highpark) <- c("text","location")
+Realtor_highpark$text<- as.character(Realtor_highpark$text, stringsAsFactors=FALSE)
+Realtor_highpark$location<- factor(Realtor_highpark$location)
+
+Realtor_toronto <- data.frame(Realtor_toronto$text, "Realtor_toronto")
+colnames(Realtor_toronto) <- c("text","location")
+Realtor_toronto$text<- as.character(Realtor_toronto$text, stringsAsFactors=FALSE)
+Realtor_toronto$location<- factor(Realtor_toronto$location)
+
+Realtor_eastyork<- data.frame(Realtor_eastyork$text, "Realtor_eastyork")
+colnames(Realtor_eastyork) <- c("text","location")
+Realtor_eastyork$text<- as.character(Realtor_eastyork$text, stringsAsFactors=FALSE)
+Realtor_eastyork$location<- factor(Realtor_eastyork$location)
+
+Realtor_northyork<- data.frame(Realtor_northyork$text, "Realtor_northyork")
+colnames(Realtor_northyork) <- c("text","location")
+Realtor_northyork$text<- as.character(Realtor_northyork$text, stringsAsFactors=FALSE)
+Realtor_northyork$location<- factor(Realtor_northyork$location)
+
+#Chek the data
+class(RS_etobicoke)
+class(Realtor_etobicoke)
+class(RS_highpark) 
+class(Realtor_highpark)
+class(RS_toronto)
+class(Realtor_toronto)
+class(RS_eastyork)
+class(Realtor_eastyork)
+class(RS_northyork)
+class(Realtor_northyork)
+
+#data type of each feauture
+sapply(RS_etobicoke, class)
+sapply(Realtor_etobicoke, class)
+sapply(RS_highpark, class)
+sapply(Realtor_highpark, class)
+sapply(RS_toronto, class)
+sapply(Realtor_toronto, class)
+sapply(RS_eastyork, class)
+sapply(Realtor_eastyork, class)
+sapply(RS_northyork, class)
+sapply(Realtor_northyork, class)
+
+#Summary
+summary(RS_etobicoke)
+summary(Realtor_etobicoke)
+summary(RS_highpark) 
+summary(Realtor_highpark)
+summary(RS_toronto)
+summary(Realtor_toronto)
+summary(RS_eastyork)
+summary(Realtor_eastyork)
+summary(RS_northyork)
+summary(Realtor_northyork)
+
+#str
+str(RS_etobicoke)
+str(Realtor_etobicoke)
+str(RS_highpark) 
+str(Realtor_highpark)
+str(RS_toronto)
+str(Realtor_toronto)
+str(RS_eastyork)
+str(Realtor_eastyork)
+str(RS_northyork)
+str(Realtor_northyork)
+
+#head
+head(RS_etobicoke)
+head(Realtor_etobicoke)
+head(RS_highpark) 
+head(Realtor_highpark)
+head(RS_toronto)
+head(Realtor_toronto)
+head(RS_eastyork)
+head(Realtor_eastyork)
+head(RS_northyork)
+head(Realtor_northyork)
+
+#tail
+tail(RS_etobicoke)
+tail(Realtor_etobicoke)
+tail(RS_highpark) 
+tail(Realtor_highpark)
+tail(RS_toronto)
+tail(Realtor_toronto)
+tail(RS_eastyork)
+tail(Realtor_eastyork)
+tail(RS_northyork)
+tail(Realtor_northyork)
+
+#dim
+dim(RS_etobicoke)
+dim(Realtor_etobicoke)
+dim(RS_highpark) 
+dim(Realtor_highpark)
+dim(RS_toronto)
+dim(Realtor_toronto)
+dim(RS_eastyork)
+dim(Realtor_eastyork)
+dim(RS_northyork)
+dim(Realtor_northyork)
+
+#nrow
+nrow(RS_etobicoke)
+nrow(Realtor_etobicoke)
+nrow(RS_highpark) 
+nrow(Realtor_highpark)
+nrow(RS_toronto)
+nrow(Realtor_toronto)
+nrow(RS_eastyork)
+nrow(Realtor_eastyork)
+nrow(RS_northyork)
+nrow(Realtor_northyork)
+
+#ncol
+ncol(RS_etobicoke)
+ncol(Realtor_etobicoke)
+ncol(RS_highpark) 
+ncol(Realtor_highpark)
+ncol(RS_toronto)
+ncol(Realtor_toronto)
+ncol(RS_eastyork)
+ncol(Realtor_eastyork)
+ncol(RS_northyork)
+ncol(Realtor_northyork)
+
+#Put the 5 real estate data frames into a list
+RS_ve<- list(etobicoke = RS_etobicoke, 
+             highpark = RS_highpark, 
+             toronto = RS_toronto,
+             eastyork = RS_eastyork, 
+             northyork = RS_northyork)
+class(RS_ve)
+sapply(RS_ve, class)
+length(RS_ve)
+seq_along(RS_ve)
+
+
+#the first 6 texts from RS_etobicoke(1)
+head(RS_ve[[1]]$text)
+head(RS_ve[[1]]$location)
+head(RS_ve[[1]])
+
+#rows 1 and 2 from column texts from RS_highpark(2) dataframe
+RS_ve[[2]][1:2,"text"]
+
+#The first 6 texts from the whole list holding 5 data frames
+for (i in seq_along(RS_ve)){
+  print(head(RS_ve[[i]]$text))
+}
+
+#texts rows 5 to 8 from the whole list
+for (i in seq_along(RS_ve)){
+  print(RS_ve[[i]]$text[5:8])
+}
+
+#Put the 5 Realtor data frames into a list
+Realtor_ve<- list(Realtor_etobicoke = Realtor_etobicoke, 
+                  Realtor_highpark = Realtor_highpark,
+                  Realtor_toronto = Realtor_toronto, 
+                  Realtor_eastyork = Realtor_eastyork,  
+                  Realtor_northyork = Realtor_northyork)
+class(Realtor_ve)
+sapply(Realtor_ve, class)
+length(Realtor_ve)
+seq_along(Realtor_ve)
+
+#the first 6 texts from Realtor_etobicoke(1)
+head(Realtor_ve[[1]]$text)
+
+#rows 1 and 2 from text column from Realtor_highpark(2) dataframe
+Realtor_ve[[2]]$text[1:2]
+
+#The first 6 texts from the whole list holding 5 data frames
+for (i in seq_along(Realtor_ve)){
+  print(head(Realtor_ve[[i]]$text))
+}
+
+#texts from 5 to 8 from the whole list
+for (i in seq_along(Realtor_ve)){
+  print(Realtor_ve[[i]]$text[5:8])
+}
+
+CleanText <- function(x, indice) {
+  
+  x <- gsub("http\\S+\\s*", "", x) ## Remove URLs
+  x <- gsub("http\\w+", "", x) ## Remove html links
+  x <- gsub("\\b+RT", "", x) ## Remove RT
+  x <- gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", x) ## Remove retweet entities
+  x <- gsub("#\\S+", "", x) ## Remove Hashtags
+  x <- gsub("@\\S+", "", x) ## Remove Mentions
+  x <- gsub("@\\w+", "", x)  ## Remove at people
+  x <- gsub("[[:cntrl:]]", "", x) ## Remove Controls and special characters
+  x <- gsub("[[:punct:]]", "", x) ## Remove Punctuations
+  x <- gsub("^[[:space:]]*","",x) ## Remove leading whitespaces
+  x <- gsub("[[:space:]]*$","",x) ## Remove trailing whitespaces
+  x <- gsub("\\d", "", x) ## Remove Controls and special characters
+  x <- gsub(" +"," ",x) ## Remove extra whitespaces
+  x <- gsub("[ \t]{2,}", "", x)# Remove unnecessary spaces
+  x <- gsub("^\\s+|\\s+$", "", x)# Remove unnecessary spaces
+  x <- gsub("[^0-9a-zA-Z ,./?><:;'~`!@#&*']","", x)# Remove unnecessary spaces
+  x <- gsub("[[:digit:]]", "", x) ## Remove numbers
+  
+  return (x)
+}
+
+#Put the 5 data frames inside one data frame and use CleanText function
+RS_total= rbind(RS_etobicoke, RS_highpark, RS_toronto, RS_eastyork, RS_northyork)
+RS_clean<-as.data.frame(sapply(RS_total,CleanText))
+class(RS_clean)
+lapply(RS_clean, class)
+RS_clean$text<- as.character(RS_clean$text, stringsAsFactors=FALSE)
+
+Realtor_total= rbind(Realtor_etobicoke, Realtor_highpark, Realtor_toronto, Realtor_eastyork, Realtor_northyork)
+Realtor_clean<-as.data.frame(sapply(Realtor_total,CleanText))
+class(Realtor_clean)
+lapply(Realtor_clean, class)
+Realtor_clean$text<- as.character(Realtor_clean$text, stringsAsFactors=FALSE)
+
+#check clean data
+levels(factor(RS_clean$location))
+head(table(RS_clean))
+
+
+#for data Real Estate RS
+# Explore and Visualize text data
+library(tidytext)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+library(wordcloud)
+library(tidyr)
+library(scales)
+theme_set(theme_classic())
+
+#Use the data frame (holding the 5 location) Group by location, and add a new column linenumber
+Clean_level <- data.frame(RS_clean %>%
+                            group_by(location) %>%
+                            mutate(linenumber = row_number()))
+
+class(Clean_level)
+Clean_level$text<- as.character(Clean_level$text, stringsAsFactors=FALSE)
+sapply(Clean_level, class)
+
+#get line number and split words
+RS_clean_linebyword<- data.frame(Clean_level %>%
+                                   unnest_tokens(word, text))
+
+class(RS_clean_linebyword)
+sapply(RS_clean_linebyword, class)
+
+#Show the first line on linebyword by place
+RS_clean_linebyword[which(RS_clean_linebyword$linenumber==1),]
+dim(RS_clean_linebyword)
+
+#stop words function contain non important significance words to be used 
+#filtered by stop words
+
+data(stop_words)
+dim(stop_words)
+
+Clean_linebyword_stw<- data.frame(RS_clean_linebyword %>%
+                                    anti_join(stop_words))
+
+#order by line number 
+head(Clean_linebyword_stw[order(Clean_linebyword_stw$linenumber, decreasing=FALSE), ])
+
+#Show the linenumber occurence of the word
+Clean_linebyword_stw[1:24,]
+dim(Clean_linebyword_stw)
+class(Clean_linebyword_stw)
+sapply(Clean_linebyword_stw, class)
+
+order_byline<- data.frame(Clean_linebyword_stw[order(Clean_linebyword_stw$linenumber, decreasing=FALSE), ])
+head(order_byline)
+
+#Count total words by location
+Count_word_by_location<-data.frame(Clean_linebyword_stw %>%
+                                     count(location,word, sort = TRUE))
+
+class(Count_word_by_location)
+sapply(Count_word_by_location, class)
+
+#Count words
+Count_word<-data.frame(Clean_linebyword_stw %>%
+                         count(word, sort = TRUE))
+
+class(Count_word)
+sapply(Count_word, class)
+
+#The 5 most frequencies words as a first approximation from each data frame
+attach(Count_word_by_location)
+setDT(Count_word_by_location)[order(-n), .SD[1:5], by = location]
+detach(Count_word_by_location)
+
+#The 5 less frequencies words as a first approximation from each data frame
+attach(Count_word_by_location)
+setDT(Count_word_by_location)[order(n), .SD[1:5], by = location]
+detach(Count_word_by_location)
+
+#Proportion by location
+attach(Count_word_by_location)
+
+Proportion<- data.frame(Count_word_by_location%>%
+                          group_by(location) %>%
+                          mutate (proportion = n / sum (n)))                                         
+
+Proportion_word_bylocation<- data.frame(Count_word_by_location%>%
+                                          group_by(location) %>%
+                                          mutate(proportion = n / sum(n)) %>%
+                                          select(-n) %>% 
+                                          spread(location, proportion))
+
+#these data frames will be used to plot comparing Toronto with the other places
+P_word_byHig_Eto<- data.frame(Count_word_by_location%>%
+                                group_by(location) %>%
+                                mutate(proportion = n / sum(n)) %>%
+                                select(-n) %>% 
+                                spread(location, proportion) %>% 
+                                gather(location, proportion, `RShighpark`:`RSetobicoke`))
+
+P_word_byloc<- data.frame(Count_word_by_location%>%
+                            group_by(location) %>%
+                            mutate(proportion = n / sum(n)) %>%
+                            select(-n) %>% 
+                            spread(location, proportion) %>% 
+                            gather(location, proportion, `RSeastyork`:`RSnorthyork`))
+
+
+class(P_word_byHig_Eto)
+sapply(P_word_byHig_Eto, class)
+class(P_word_byloc)
+sapply(P_word_byloc, class)
+P_word_byloc$location<-as.factor(P_word_byloc$location)
+
+
+
+attach(Count_word)
+#Plots
+#Wordcloud
+RS_clean_linebyword %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+Count_word %>%
+  with(wordcloud(word, n, max.words = 100))
+
+#First plot of frequecy words
+ggplot(subset(Count_word, n>200), aes(x=word, y=n)) + 
+  geom_bar(stat="identity", width=.7, fill="tomato3") + 
+  labs(title="Most Frequency Words") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.5))
+
+
+# Most frequency words using dot plot. Help to identify some outliers words
+ggplot(subset(Count_word, n>200), aes(x=word, y=n)) + 
+  geom_point(col="tomato2", size=3) +   # Draw points
+  geom_segment(aes(x=word, 
+                   xend=word, 
+                   y=min(n), 
+                   yend=max(n)), 
+               linetype="dashed", 
+               size=0.1) +   # Draw dashed lines
+  labs(title="Most Frequency Words. Dot Plot", 
+       subtitle="Identify outliers") +  
+  coord_flip()
+
+
+#Most Frequency Words distribuited by location
+p <- ggplot(subset(Count_word_by_location, n>50), aes(x=word, y=n, fill=location)) +
+  geom_bar(stat="identity" , width = 0.7)+ 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
+  labs(title="Most Frequency Words distribuited by location") 
+p
+
+
+#Words percentage distruibuited by location
+Clean_level_local <- data.frame(RS_clean %>%
+                                  group_by(location) %>%
+                                  unnest_tokens(word, text) %>%
+                                  anti_join(stop_words))
+
+p <- ggplot(subset(Clean_level_local, n>150), aes(x = word)) + 
+  geom_bar(aes(y =  ..count../sum(..count..), fill = location)) + 
+  scale_fill_brewer(palette = "Set2") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
+  ylab("Percent") + 
+  ggtitle("Words percentage distribuited by location")
+p
+
+
+#Comparing RSToronto against RSetobicoke and RShighpark
+
+ggplot(P_word_byHig_Eto, aes(x = proportion, y = `RStoronto`, color = abs(`RStoronto` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~location, ncol = 2 ) +
+  theme(legend.position="none") +
+  labs(y = "RStoronto", x = NULL)
+
+
+#Comparing RSToronto against the RSeastyork,RSetobicoke,Rshighpark,Rsnorthyork
+
+ggplot(P_word_byloc, aes(x = proportion, y = `RStoronto`, color = abs(`RStoronto` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~location, ncol = 2 ) +
+  theme(legend.position="none") +
+  labs(y = "RStoronto", x = NULL)
+
+#correlation of the word frequencies between Toronto and etobicoke
+cor.test(data = P_word_byloc[P_word_byloc$location == "RSetobicoke",],
+         ~ proportion + `RStoronto`)
+#correlation of the word frequencies between Toronto and highpark
+cor.test(data = P_word_byloc[P_word_byloc$location == "RShighpark",],
+         ~ proportion + `RStoronto`)
+#correlation of the word frequencies between Toronto and eastyork
+cor.test(data = P_word_byloc[P_word_byloc$location == "RSeastyork",],
+         ~ proportion + `RStoronto`)
+#correlation of the word frequencies between Toronto and etobicoke
+cor.test(data = P_word_byloc[P_word_byloc$location == "RSetobicoke",],
+         ~ proportion + `RStoronto`)
+#correlation of the word frequencies between Toronto and northyork
+cor.test(data = P_word_byloc[P_word_byloc$location == "RSnorthyork",],
+         ~ proportion + `RStoronto`)
+
+#For data Realtor
+# Explore and Visualize text data
+
+#Group by location, and add a new column linenumber
+Real_Clean_level <- data.frame(Realtor_clean %>%
+                                 group_by(location) %>%
+                                 mutate(linenumber = row_number()))
+
+class(Real_Clean_level)
+sapply(Real_Clean_level, class)
+
+#get line number and split words
+Real_clean_linebyword<- data.frame(Real_Clean_level %>%
+                                     unnest_tokens(word, text))
+
+class(Real_clean_linebyword)
+sapply(Real_clean_linebyword, class)
+
+#Show the first line on linebyword by level
+Real_clean_linebyword[which(Real_clean_linebyword$linenumber==1),]
+dim(Real_clean_linebyword)
+
+#stop words function contain non important  significant words to be used 
+#filtered by stop words
+
+data(stop_words)
+
+Real_Clean_linebyword_stw<- data.frame(Real_clean_linebyword %>%
+                                         anti_join(stop_words))
+
+#order by line number 
+head(Real_Clean_linebyword_stw[order(Real_Clean_linebyword_stw$linenumber, decreasing=FALSE), ])
+
+#Show the linenumber occurence of the word
+Real_Clean_linebyword_stw[1:24,]
+
+dim(Real_Clean_linebyword_stw)
+class(Real_Clean_linebyword_stw)
+sapply(Real_Clean_linebyword_stw, class)
+
+Real_order_byline<- data.frame(Real_Clean_linebyword_stw[order(Real_Clean_linebyword_stw$linenumber, decreasing=FALSE), ])
+head(Real_order_byline)
+
+#Count total words by location
+Real_Count_word_by_location<-data.frame(Real_Clean_linebyword_stw %>%
+                                          count(location,word, sort = TRUE))
+
+class(Real_Count_word_by_location)
+sapply(Real_Count_word_by_location, class)
+
+#Count words
+Real_Count_word<-data.frame(Real_Clean_linebyword_stw %>%
+                              count(word, sort = TRUE))
+
+class(Real_Count_word)
+sapply(Real_Count_word, class)
+
+#The 5 most frequencies words as a first approximation from each data frame
+attach(Real_Count_word_by_location)
+setDT(Real_Count_word_by_location)[order(-n), .SD[1:5], by = location]
+detach(Real_Count_word_by_location)
+
+#The 5 less frequencies words as a first approximation from each data frame
+attach(Real_Count_word_by_location)
+setDT(Real_Count_word_by_location)[order(n), .SD[1:5], by = location]
+detach(Real_Count_word_by_location)
+
+#Proportion by location
+attach(Real_Count_word_by_location)
+
+Real_Proportion<- data.frame(Real_Count_word_by_location%>%
+                               group_by(location) %>%
+                               mutate(proportion = n / sum(n)))                                         
+
+
+Real_Proportion_word_bylocation<- data.frame(Real_Count_word_by_location%>%
+                                               group_by(location) %>%
+                                               mutate(proportion = n / sum(n)) %>%
+                                               select(-n) %>% 
+                                               spread(location, proportion)) 
+
+
+Real_P_word_byHig_Eto<- data.frame(Real_Count_word_by_location%>%
+                                     group_by(location) %>%
+                                     mutate(proportion = n / sum(n)) %>%
+                                     select(-n) %>% 
+                                     spread(location, proportion) %>% 
+                                     gather(location, proportion, `Realtorhighpark`:`Realtoretobicoke`))
+
+Real_P_word_byloc<- data.frame(Real_Count_word_by_location%>%
+                                 group_by(location) %>%
+                                 mutate(proportion = n / sum(n)) %>%
+                                 select(-n) %>% 
+                                 spread(location, proportion) %>% 
+                                 gather(location, proportion, `Realtoreastyork`:`Realtornorthyork`))
+
+class(Real_P_word_byHig_Eto)
+sapply(Real_P_word_byHig_Eto, class)
+class(Real_P_word_byloc)
+sapply(Real_P_word_byloc, class)
+Real_P_word_byloc$location<-as.factor(Real_P_word_byloc$location)
+
+
+
+attach(Real_Count_word)
+#Plots
+#Wordcloud
+Real_clean_linebyword %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+Real_Count_word %>%
+  with(wordcloud(word, n, max.words = 80))
+
+#First plot of frequecy words
+ggplot(subset(Real_Count_word, n>50), aes(x=word, y=n)) + 
+  geom_bar(stat="identity", width=.7, fill="tomato3") + 
+  labs(title="Most Frequency Words") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.5))
+
+
+# Most frequency words using dot plot. Help to identify some outliers words
+ggplot(subset(Real_Count_word, n>50), aes(x=word, y=n)) + 
+  geom_point(col="tomato2", size=3) +   # Draw points
+  geom_segment(aes(x=word, 
+                   xend=word, 
+                   y=min(n), 
+                   yend=max(n)), 
+               linetype="dashed", 
+               size=0.1) +   # Draw dashed lines
+  labs(title="Most Frequency Words. Dot Plot", 
+       subtitle="Identify outliers") +  
+  coord_flip()
+
+
+#Most Frequency Words distribuited by location
+p <- ggplot(subset(Real_Count_word_by_location, n>20), aes(x=word, y=n, fill=location)) +
+  geom_bar(stat="identity" , width = 0.7)+ 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
+  labs(title="Most Frequency Words distribuited by location") 
+p
+
+
+#Words percentage distruibuited by location
+Real_Clean_level_local <- data.frame(Realtor_clean %>%
+                                       group_by(location) %>%
+                                       unnest_tokens(word, text) %>%
+                                       anti_join(stop_words))
+
+p <- ggplot(subset(Real_Clean_level_local, n>10), aes(x = word)) + 
+  geom_bar(aes(y =  ..count../sum(..count..), fill = location)) + 
+  scale_fill_brewer(palette = "Set2") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6)) + 
+  ylab("Percent") + 
+  ggtitle("Words percentage distribuited by location")
+p
+
+
+#Comparing RSToronto against RSetobicoke and RShighpark
+
+ggplot(Real_P_word_byHig_Eto, aes(x = proportion, y = `Realtortoronto`, color = abs(`Realtortoronto` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~location, ncol = 2 ) +
+  theme(legend.position="none") +
+  labs(y = "Realtor Toronto", x = NULL)
+
+
+#Comparing RSToronto against the RSeastyork,RSetobicoke,Rshighpark,Rsnorthyork
+
+ggplot(Real_P_word_byloc, aes(x = proportion, y = `Realtortoronto`, color = abs(`Realtortoronto` - proportion))) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  facet_wrap(~location, ncol = 2 ) +
+  theme(legend.position="none") +
+  labs(y = "Realtor Toronto", x = NULL)
+
+#correlation of the word frequencies between Toronto and etobicoke
+cor.test(data = Real_P_word_byloc[Real_P_word_byloc$location == "Realtoretobicoke",],
+         ~ proportion + `Realtortoronto`)
+#correlation of the word frequencies between Toronto and highpark
+cor.test(data = Real_P_word_byloc[Real_P_word_byloc$location == "Realtorhighpark",],
+         ~ proportion + `Realtortoronto`)
+#correlation of the word frequencies between Toronto and eastyork
+cor.test(data = Real_P_word_byloc[Real_P_word_byloc$location == "Realtoreastyork",],
+         ~ proportion + `Realtortoronto`)
+#correlation of the word frequencies between Toronto and etobicoke
+cor.test(data = Real_P_word_byloc[Real_P_word_byloc$location == "Realtoretobicoke",],
+         ~ proportion + `Realtortoronto`)
+#correlation of the word frequencies between Toronto and northyork
+cor.test(data = Real_P_word_byloc[Real_P_word_byloc$location == "Realtornorthyork",],
+         ~ proportion + `Realtortoronto`)
+
+
+
+#TEXT MINING CReate a train and text data
+library(tm) # Framework for text mining. 
+require(tm)
+library(data.table)
+library(qdap) # Quantitative analysis  
+library(qdapDictionaries) 
+library(magrittr)
+library(dplyr) # Data wrangling, pipe operator %>%(). 
+library(RColorBrewer) # Generate palette of colours for plots.
+library(Rcpp)
+library(ggplot2) # Plot word frequencies. 
+library(scales) # Include commas in numbers. 
+library(Rgraphviz) # Correlation plots.
+library(wordcloud)
+library(RWeka)
+library(SnowballC)
+library(caret)
+#library(rminer)
+library(e1071)
+library(kernlab)
+library(party)
+library(FSelector)
+library(plyr)
+require(plyr)
+library(class)
+library(stringr)
+library(wordcloud)
+library(graph)
+library(dplyr) 
+library(stringr)
+# the library(Rgraphviz)  Correlation plots is not available in CRAN
+# In order to print it used a bioconductor
+# Rgraphviz (Hansen et al., 2016) from the BioConductor repository for R 
+# (bioconductor.org) is used to plot the network graph that displays
+# the correlation between chosen words in the corpus. 
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("Rgraphviz")
+
+
+#Create an indice for every dataframe
+RS_etobicoke$indice<-factor(1:2000)
+RS_highpark$indice<-factor(1:2000)
+RS_toronto$indice<-factor(1:2000)
+RS_eastyork$indice<-factor(1:2000)
+RS_northyork$indice<-factor(1:2000)
+
+#Create train with 70% of data and test with 30% of data on every data frames
+#RS_etobicoke
+
+rn_train_et <- sample(nrow(RS_etobicoke), floor(nrow(RS_etobicoke)*0.7))
+train_et <- RS_etobicoke[rn_train_et,]
+test_et <- RS_etobicoke[-rn_train_et,]
+
+dim(train_et)
+dim(test_et)
+
+#RS_highpark
+
+rn_train_hp <- sample(nrow(RS_highpark), floor(nrow(RS_highpark)*0.7))
+train_hp <- RS_highpark[rn_train_hp,]
+test_hp <- RS_highpark[-rn_train_hp,]
+
+dim(train_hp)
+dim(test_hp)
+
+#RS_toronto
+
+rn_train_to <- sample(nrow(RS_toronto), floor(nrow(RS_toronto)*0.7))
+train_to <- RS_toronto[rn_train_to,]
+test_to <- RS_toronto[-rn_train_to,]
+
+nrow(train_to)
+nrow(test_to)
+
+#RS_eastyork
+
+rn_train_ey <- sample(nrow(RS_eastyork), floor(nrow(RS_eastyork)*0.7))
+train_ey <- RS_eastyork[rn_train_ey,]
+test_ey <- RS_eastyork[-rn_train_ey,]
+
+nrow(train_ey)
+nrow(test_ey)
+
+#RS_northyork
+
+rn_train_ny <- sample(nrow(RS_northyork), floor(nrow(RS_northyork)*0.7))
+train_ny <- RS_northyork[rn_train_ny,]
+test_ny <- RS_northyork[-rn_train_ny,]
+
+nrow(train_ny)
+nrow(test_ny)
+
+#Join in a whole data frame the 5 training data and clean them
+RS_total_train= rbind(train_et, train_hp, train_to, train_ey, train_ny)
+attach(RS_total_train)
+RS_clean_train <- subset(RS_total_train, select = -c(indice))
+RS_clean_train<-as.data.frame(sapply(RS_clean_train,CleanText))
+RS_clean_train<-cbind(RS_clean_train,indice)
+class(RS_clean_train)
+lapply(RS_clean_train, class)
+
+#Keep a copy in the disk
+clean_train<-data.frame(RS_clean_train)
+write.csv(clean_train, file="C:/../clean_train.csv")
+
+
+RS_clean_train$location<-factor(RS_clean_train$location)
+RS_clean_train$text<-lapply(RS_clean_train$text, iconv,from ="ISO-8859-15", to="UTF-8")
+RS_clean_train$indice<-as.factor(RS_clean_train$indice) 
+
+
+class(RS_clean_train)
+lapply(RS_clean_train, class)
+
+#Testing data
+RS_total_test= rbind(test_et, test_hp, test_to, test_ey, test_ny)
+attach(RS_total_test)
+RS_clean_test<- subset(RS_total_test, select = -c(indice))
+RS_clean_test<-as.data.frame(sapply(RS_clean_test,CleanText))
+RS_clean_test<-cbind(RS_clean_test,indice)
+class(RS_clean_test)
+lapply(RS_clean_test, class)
+
+RS_clean_test$location<-factor(RS_clean_test$location)
+RS_clean_test$text<-lapply(RS_clean_test$text, iconv,from ="ISO-8859-15", to="UTF-8")
+RS_clean_test$indice<-as.factor(RS_clean_test$indice) 
+
+class(RS_clean_test)
+lapply(RS_clean_test, class)
+
+
+#Use RS_clean_train to generate Bi-gram and Tree-gram -->> 1-2-3 and 4 grams 
+
+options(mc.cores =1)
+
+class(RS_clean_train$text)
+doc.vec <- VectorSource(RS_clean_train$text)
+corpus<-Corpus(doc.vec)
+
+
+
+corpus.tmp <- tm_map(corpus, removePunctuation)
+corpus.tmp <- tm_map(corpus.tmp, stripWhitespace)
+corpus.tmp <- tm_map(corpus.tmp,  content_transformer(tolower))
+corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                 "real","estate","property","realestate","toronto","torontos",
+                                                 "properti", "estat",
+                                                 "canadaeduaubcedubuaeduaubcedubua"))
+#remove own words that are highly repeated as well as on-sense word
+length(stopwords("english"))
+stopwords("english") #Learn which are the stopwords
+#change some Acronyms industry related using speci???c transformations
+toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
+corpus.tmp <- tm_map(corpus.tmp, toString, "accredited mortgage professional", "amp")
+corpus.tmp <- tm_map(corpus.tmp, toString, "average", "ave") 
+corpus.tmp<- tm_map(corpus.tmp, toString, "home price", "hp")
+corpus.tmp<- tm_map(corpus.tmp, toString, "standard", "st")
+
+corpus.tmp <- tm_map(corpus.tmp, removeNumbers)
+#Stemming uses an algorithm that removes common word endings for English words, 
+#such as "es", "ed" and "'s".
+corpus.tmp <- tm_map(corpus.tmp, stemDocument, language="en")
+corpus.tmp <- tm_map(corpus.tmp, PlainTextDocument)
+
+inspect(corpus.tmp[1:3])
+#A document should be the row where is the tweet
+#Each document is treated as a separate entity or record.
+corpus.tmp #It has 7000 documents
+#inspect(corpus.tmp[1])
+# Function to Check inside of the document
+checkDocument <- function(d, n) {d %>% extract2(n) %>% as.character() %>% writeLines()} 
+checkDocument(corpus.tmp, 1)
+checkDocument(corpus.tmp, 5)
+class(corpus.tmp)
+length(corpus.tmp)
+str(corpus.tmp)
+class(corpus.tmp[[1]])
+class(corpus.tmp[[5]])
+##summary(corpus.tmp)
+
+# Split a string into a n-gram with min and max gram
+# NGramTokenizer is a function that splits strings into n-grams
+# with  given minimal and maximal numbers of grams.
+# Ngram from 1 up to 3 grams
+
+NgramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=1, max =4))
+}
+
+#The weighting used is term frequency
+#A document term matrix is a matrix with documents as the rows
+#and terms(words) as the columns and a count of the frequency of words as 
+#the cells of the matrix. We use DocumentTermMatrix() to create the matrix: 
+#It is done by two differents ways, one just using the corpus,
+#the second one with the n-grams 
+
+train_dtm_ngram<-DocumentTermMatrix(corpus.tmp, control =list(tokenize = NgramTokenizer))
+train_dtm_docuM<-DocumentTermMatrix((corpus.tmp))
+
+dim(train_dtm_ngram)
+dim(train_dtm_docuM) #less columns columns of one token
+
+class(train_dtm_ngram)
+class(train_dtm_docuM)
+
+inspect(train_dtm_ngram[1:3,1:5])
+inspect(train_dtm_docuM[1:3,1:5])
+
+# Exploring the Document Term Matrix
+# Get the term frequencies as a vector by converting 
+# the document term matrix into a matrix and summing the column counts
+
+#For DTM using ngram
+freq_ngram <- colSums(as.matrix(train_dtm_ngram))
+head(freq_ngram)
+length(freq_ngram)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_ngram<- order(freq_ngram)
+# Least frequent terms
+freq_ngram[head(ord_ngram)]
+# Most frequent terms
+freq_ngram[tail(ord_ngram)]
+
+
+#DTM with corpus
+freq_docuM <- colSums(as.matrix(train_dtm_docuM))
+#freq_docuM
+length(freq_docuM)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_docuM<- order(freq_docuM)
+# Least frequent terms
+freq_docuM[head(ord_docuM)]
+# Most frequent terms
+freq_docuM[tail(ord_docuM)]
+
+# Distribution of Term Frequencies
+# Frequency of frequencies. 
+#For ngrams less frequency table
+head(table(freq_ngram), 15)
+#In ngram there are 10842 terms that occur just once.
+
+#For ngram most frequency table
+tail(table(freq_ngram), 15)
+#ngram, one term occurs 1463
+
+#For docuM less frequency table
+head(table(freq_docuM), 15)
+#In docuM there are 817 terms that occur just once
+
+#For docuM most frequency table
+tail(table(freq_docuM), 15)
+#In docuM there are one term that occur 1463 times
+
+#Quantitative Analysis of Text (Most frequent letter used in train data)
+#Summarize a list of words
+#Extract the shorter terms from each of the documents into one long word list.
+#Convert train_dtm_docuM  to  matrix, 
+#it will use the train data before sparce
+# extract the column names (the terms) 
+#and retain those shorter than 25 characters. 
+
+train_words <- train_dtm_docuM %>%
+  as.matrix %>% 
+  colnames %>% 
+  (function(x) x[nchar(x) < 25])
+
+class(train_words)
+length(train_words)
+head(train_words, 15)
+mean(nchar(words))
+summary(nchar(train_words))
+table(nchar(train_words))
+#Generate freq, cum freq, percent and cum percent
+dist_tab(nchar(train_words))
+
+# Plot train_words
+# The vertical line shows the mean length of words. 
+
+data.frame(nletters=nchar(train_words)) %>% 
+  ggplot(aes(x=nletters)) + 
+  geom_histogram(binwidth=1) + 
+  geom_vline(xintercept=mean(nchar(words)), colour="green", size=1, alpha=.8) +
+  labs(x="Number of Letters", y="Number of Words")
+
+# Check about the most frequently letters in train_words
+# Transform the vector of words into a list of letters,
+# construct a frequency count
+# split the words into characters using str split() from stringr
+# remove the ???rst string (an empty string) from each of the results (using sapply()). 
+# Reduce the result into a simple vector, using unlist(), 
+# we then generate a data frame recording the letter frequencies, using dist tab() from qdap.
+# We can then plot the letter proportions. 
+library(dplyr) 
+library(stringr)
+
+#train_words %>% 
+#  str_split("") %>%
+#  sapply(function(x) x[-1]) %>% 
+#  unlist %>% 
+#  dist_tab %>% 
+#  mutate(Letter=factor(toupper(interval), 
+#                       levels=toupper(interval[order(freq)]))) %>% 
+#  ggplot(aes(Letter, weight=percent)) +
+#  geom_bar() + 
+#  coord_flip() +
+#  labs(y="Proportion") +
+#  scale_y_continuous(breaks=seq(0, 12, 2), 
+#                     label=function(x) paste0(x, "%"),expand=c(0,0), limits=c(0,12))
+
+
+# Removing Sparse Terms
+# Non-frequent terms are not needed, therefore have been removed 
+# using removeSparseTerms() function 
+
+dim(train_dtm_ngram)
+dim(train_dtm_docuM)
+
+train_rmspac_ngram <- removeSparseTerms(train_dtm_ngram, 0.97)
+train_rmspac_docuM <- removeSparseTerms(train_dtm_docuM, 0.97)
+
+dim(train_rmspac_ngram)
+dim(train_rmspac_docuM)
+
+#inspect(train_rmspac_ngram)
+#inspect(train_rmspac_docuM)
+
+inspect(train_rmspac_ngram[1:3,1:12])
+inspect(train_rmspac_docuM[1:3,1:9])
+
+#Check the new data for ngram
+freq_sparce_ngram <- colSums(as.matrix(train_rmspac_ngram))
+freq_sparce_ngram
+length(freq_sparce_ngram)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_sparce_ngram<- order(freq_sparce_ngram)
+# Least frequent terms
+freq_sparce_ngram[head(ord_sparce_ngram)]
+# Most frequent terms
+freq_sparce_ngram[tail(ord_sparce_ngram)]
+table(freq_sparce_ngram)
+
+#Check the new data for docuM
+freq_sparce_docuM <- colSums(as.matrix(train_rmspac_docuM))
+freq_sparce_docuM
+length(freq_sparce_docuM)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_sparce_docuM<- order(freq_sparce_docuM)
+# Least frequent terms
+freq_sparce_docuM[head(ord_sparce_docuM)]
+# Most frequent terms
+freq_sparce_docuM[tail(ord_sparce_docuM)]
+table(freq_sparce_docuM)
+
+
+# Another way to familiarize with most frequent terms
+findFreqTerms(train_rmspac_ngram, lowfreq=50)
+findFreqTerms(train_rmspac_docuM, lowfreq=50)
+
+# Find association with a word specifying a correlation limit.
+# If two words always appear together then the correlation would be 1.0 
+# and if they never appear together the correlation would be 0.0.
+# Thus the correlation is a measure of how closely associated the words are in the corpus
+
+findAssocs(train_rmspac_ngram, "tax", corlimit=0.6)
+findAssocs(train_rmspac_ngram, c("tax","foreign","buyer"), corlimit=0.6)
+
+findAssocs(train_rmspac_docuM, "tax", corlimit=0.6)
+
+findAssocs(train_rmspac_ngram, "foreign", corlimit=0.6)
+findAssocs(train_rmspac_docuM, "foreign", corlimit=0.6)
+
+findAssocs(train_rmspac_ngram, "buyer", corlimit=0.6)
+findAssocs(train_rmspac_docuM, "buyer", corlimit=0.6)
+
+#plot correlations
+# plot the network graph that displays the correlation between chosen words in the corpus. 
+# Here we choose 10 of the more frequent words as the nodes and include links 
+#between words when they have at least a correlation of 0.5
+
+plot(train_rmspac_docuM, terms=findFreqTerms(train_rmspac_docuM, lowfreq=200)[1:15], corThreshold=0.5)
+plot(train_rmspac_ngram, terms=findFreqTerms(train_rmspac_ngram, lowfreq=200)[1:15], corThreshold=0.5)
+
+# Plot Word Frequencies
+# Count all the words in the corpus
+
+freq_sparce_docuM2 <- sort(colSums(as.matrix(train_rmspac_docuM)), decreasing=TRUE) 
+head(freq_sparce_docuM2 , 13)
+
+class(freq_sparce_docuM2)
+
+#Create a data frame on the frequency
+word_freq <- data.frame(word=names(freq_sparce_docuM2), freq=freq_sparce_docuM2)
+head(word_freq)
+
+# Plot the frequency 
+
+subset(word_freq , freq>200) %>% 
+  ggplot(aes(word, freq)) +
+  geom_bar(stat="identity") + 
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+# Wordcloud 
+set.seed(123) 
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=30)
+set.seed(123)
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, max.words=100, scale=c(6, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(123)
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=100)
+set.seed(123)
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=100, scale=c(7, .1), colors=brewer.pal(8, "RdBu"))
+set.seed(123)
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=100,scale=c(7, .1), colors=brewer.pal(15, "RdYlGn"))
+set.seed(123)
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=100, scale=c(5, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(142) 
+dark2 <- brewer.pal(6, "Dark2")
+wordcloud(names(freq_sparce_docuM2), freq_sparce_docuM2, min.freq_sparce_docuM2=100, rot.per=0.4, colors=dark2)
+
