@@ -1,0 +1,203 @@
+library(tm) # Framework for text mining. 
+require(tm)
+library(data.table)
+library(qdap) # Quantitative analysis  
+library(qdapDictionaries) 
+library(magrittr)
+library(dplyr) # Data wrangling, pipe operator %>%(). 
+library(RColorBrewer) # Generate palette of colours for plots.
+library(Rcpp)
+library(ggplot2) # Plot word frequencies. 
+library(scales) # Include commas in numbers. 
+library(Rgraphviz) # Correlation plots.
+library(wordcloud)
+library(RWeka)
+library(SnowballC)
+library(caret)
+#library(rminer)
+library(e1071)
+library(kernlab)
+library(party)
+library(FSelector)
+library(plyr)
+require(plyr)
+library(class)
+library(stringr)
+library(wordcloud)
+library(graph)
+require(grid)
+#It can achieve many interesting text analyses 
+#based on the relationships between words.
+#data to use corpus.tmp
+#LEarning ngram, 2gram, 3gram and 4gram
+
+clean_train<-read.csv(file="C://clean_train.csv"
+                       ,header=T, stringsAsFactors = FALSE)
+
+
+clean_train<- subset(clean_train, select = -c(X))
+
+UnigramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=1, max =1))
+}
+BigramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=2, max =2))
+}
+TrigramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=3, max =3))
+}
+
+QuadgramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=4, max =4))
+}
+
+class(clean_train$text)
+doc.vec <- VectorSource(clean_train$text)
+corpus<-Corpus(doc.vec)
+
+
+corpus.tmp <- tm_map(corpus, removePunctuation)
+corpus.tmp <- tm_map(corpus.tmp, stripWhitespace)
+corpus.tmp <- tm_map(corpus.tmp,  content_transformer(tolower))
+corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                 "real","estate","property","realestate","toronto","torontos",
+                                                 "properti", "estat",
+                                                 "canadaeduaubcedubuaeduaubcedubua"))
+#remove own words that are highly repeated as well as on-sense word
+length(stopwords("english"))
+stopwords("english") #Learn which are the stopwords
+#change some Acronyms industry related using speci???c transformations
+toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
+corpus.tmp <- tm_map(corpus.tmp, toString, "accredited mortgage professional", "amp")
+corpus.tmp <- tm_map(corpus.tmp, toString, "average", "ave") 
+corpus.tmp<- tm_map(corpus.tmp, toString, "home price", "hp")
+corpus.tmp<- tm_map(corpus.tmp, toString, "standard", "st")
+
+corpus.tmp <- tm_map(corpus.tmp, removeNumbers)
+#Stemming uses an algorithm that removes common word endings for English words, 
+#such as "es", "ed" and "'s".
+corpus.tmp <- tm_map(corpus.tmp, stemDocument, language="en")
+corpus.tmp <- tm_map(corpus.tmp, PlainTextDocument)
+
+
+
+dtmUni <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = UnigramTokenizer))
+dtmBi  <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = BigramTokenizer))
+dtmTri <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = TrigramTokenizer))
+dtmQuad <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = QuadgramTokenizer))
+
+dim(dtmUni)
+dim(dtmBi)
+dim(dtmTri)
+dim(dtmQuad)
+
+dtmUni <- removeSparseTerms(dtmUni, 0.98)
+dtmBi  <-  removeSparseTerms(dtmBi , 0.98)
+dtmTri <- removeSparseTerms(dtmTri, 0.98)
+dtmQuad <- removeSparseTerms(dtmQuad, 0.98)
+
+dim(dtmUni)
+dim(dtmBi)
+dim(dtmTri)
+dim(dtmQuad)
+
+#inspect
+inspect(dtmUni[1:3,1:5])
+inspect(dtmBi[1:3,1:3])
+inspect(dtmTri[1:3,1:3])
+inspect(dtmQuad[1:3,1:3])
+
+
+# Term frequency
+freq.uni <- colSums(as.matrix(dtmUni))
+freq.bi  <- colSums(as.matrix(dtmBi))
+freq.tri <- colSums(as.matrix(dtmTri))
+freq.quad <- colSums(as.matrix(dtmQuad))
+
+##sort
+freq.uni <- sort(freq.uni, decreasing = TRUE)
+freq.bi  <- sort(freq.bi, decreasing = TRUE)
+freq.tri <- sort(freq.tri, decreasing = TRUE)
+freq.quad <- sort(freq.quad, decreasing = TRUE)
+
+
+# Create the top 40 data frames from the matrices
+df.freq.uni <- data.frame("word"=names(head(freq.uni,40)), "Frequency"=head(freq.uni,40))
+df.freq.bi  <- data.frame("word"=names(head(freq.bi,40)), "Frequency"=head(freq.bi,40))
+df.freq.tri <- data.frame("word"=names(head(freq.tri,40)), "Frequency"=head(freq.tri,40))
+df.freq.quad <- data.frame("word"=names(head(freq.quad,40)), "Frequency"=head(freq.quad,40))
+
+# Reorder levels for better plotting
+df.freq.uni$Term1 <- reorder(df.freq.uni$word, df.freq.uni$Frequency)
+df.freq.bi$Term1  <- reorder(df.freq.bi$word, df.freq.bi$Frequency)
+df.freq.tri$Term1 <- reorder(df.freq.tri$word, df.freq.tri$Frequency)
+df.freq.quad$Term1 <- reorder(df.freq.quad$word, df.freq.quad$Frequency)
+
+#Bar Plots
+p1 <- ggplot(df.freq.uni, aes(x = Term1, y = Frequency)) +
+      geom_bar(stat = "identity", color="gray55", fill="orange") +
+      geom_text(data=df.freq.uni,aes(x=Term1,y=-2000,label=Frequency),vjust=0, size=3) +
+      xlab("Words") + ylab("Count") + ggtitle("Top 40 UniGram Tokenized Word Frequency") +
+      theme(plot.title = element_text(lineheight=.8, face="bold")) +
+      coord_flip()
+p1
+
+p2 <- ggplot(df.freq.bi, aes(x = Term1, y = Frequency)) +
+      geom_bar(stat = "identity", color="gray55", fill="blue2") +
+      geom_text(data=df.freq.bi,aes(x=Term1,y=-250,label=Frequency),vjust=0, size=3) +
+      xlab("Words") + ylab("Count") + ggtitle("Top 40 BiGram Tokenized Word Frequency") +
+      theme(plot.title = element_text(lineheight=.8, face="bold")) +
+      coord_flip()
+
+p2
+
+p3 <- ggplot(df.freq.tri, aes(x = Term1, y = Frequency)) +
+      geom_bar(stat = "identity", color="gray55", fill="darkgreen") +
+      geom_text(data=df.freq.tri,aes(x=Term1,y=-25,label=Frequency),vjust=0, size=3) +  
+      xlab("Words") + ylab("Count") + ggtitle("Top 40 TriGram Tokenized Word Frequency") +
+      theme(plot.title = element_text(lineheight=.8, face="bold")) +
+      coord_flip()
+
+p3
+
+p4 <- ggplot(df.freq.quad, aes(x = Term1, y = Frequency)) +
+      geom_bar(stat = "identity", color="gray55", fill="gold") +
+      geom_text(data=df.freq.quad,aes(x=Term1,y=-3,label=Frequency),vjust=0, size=3) +  
+      xlab("Words") + ylab("Count") + ggtitle("Top 40 QuadGram Tokenized Word Frequency") +
+      theme(plot.title = element_text(lineheight=.8, face="bold")) +
+      coord_flip()
+
+p4
+
+#Word Clouds
+
+wordcloud(words = df.freq.uni$Term1,
+          freq = df.freq.uni$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.bi$Term1,
+          freq = df.freq.bi$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.tri$Term1,
+          freq = df.freq.tri$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.quad$Term1,
+          freq = df.freq.quad$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
