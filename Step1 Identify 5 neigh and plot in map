@@ -1,0 +1,104 @@
+#library
+library(ggmap)
+library(tidyverse)
+library(ggplot2)
+library(ggalt)
+
+#Distance betweetn neigbourhoods
+e_hp<-round(as.numeric(select (mapdist('Etobicoke','High park', mode = 'driving'), miles))/2,2)
+t_hp<-round(as.numeric(select (mapdist('Toronto','High Park', mode = 'driving'), miles))/2,2)
+t_eay<-round(as.numeric(select (mapdist('Toronto','east york', mode = 'driving'), miles))/2,2)
+eay_ny<-round(as.numeric(select (mapdist('east york','Nort york', mode = 'driving'), miles))/2,2)
+
+#Choose the smallest distance to be the radio
+etobicoke<-c(43.620495,-79.513199,"Etobicoke", e_hp)
+highpark<-c(43.645485,-79.464752,"Highpark", e_hp)
+toronto<-c(43.653908,-79.384293,"Toronto", t_hp)
+eastyork<-c(43.691200,-79.341667,"EastYork", t_eay)
+northyork<-c(43.761539,-79.411079,"Northyork", t_eay)
+
+class(northyork)
+neigh<-data.frame(etobicoke, highpark, toronto , eastyork, northyork)
+neigh<-data.frame(t(neigh))
+colnames(neigh)<-c("latitud","longitud","place", "radio")
+
+#plot map
+neigh$longitud<-as.numeric(as.character(neigh$longitud))
+neigh$latitud<-as.numeric(as.character(neigh$latitud))
+neigh$radio<-as.numeric(as.character(neigh$radio))
+
+mymap<-qmap('toronto', zoom = 11)
+
+mymap + geom_point(data = neigh, aes(x = longitud, y = latitud), color="red", size=4, alpha=0.5)
+
+# Get Toronto Coordinates 
+# get longitude and latitude
+toronto_geo<-geocode("Toronto")
+
+# Get the Map 
+# Google Satellite Map
+toronto_ggl_sat_map <- qmap("toronto", zoom=11, source = "google", maptype="satellite")  
+# Google Road Map
+toronto_ggl_road_map <- qmap("toronto", zoom=11, source = "google", maptype="roadmap")  
+# Google Hybrid Map
+toronto_ggl_hybrid_map <- qmap("toronto", zoom=11, source = "google", maptype="hybrid")  
+
+# Get Coordinates for Toronto Neighbourhood 
+toronto_places <- c("etobicoke", "high park", "toronto" , "eastyork", "northyork")
+
+# get longitudes and latitudes
+places_loc_toronto <- geocode(toronto_places) 
+
+# Plot Google Road Map 
+#A close idea of twitters locations
+toronto_ggl_road_map + geom_point(aes(x=lon, y=lat),
+                                  data = places_loc_toronto, 
+                                  alpha = 1, 
+                                  size = 4, 
+                                  color = "tomato") + 
+                                  geom_encircle(aes(x=lon, y=lat),
+                                  data = places_loc_toronto, size = 2, color = "blue")
+
+# Google Hybrid Map 
+toronto_ggl_hybrid_map + geom_point(aes(x=lon, y=lat),
+                                    data = places_loc_toronto, 
+                                    alpha = 1, 
+                                    size = 4, 
+                                    color = "tomato") + 
+                                    geom_encircle(aes(x=lon, y=lat),
+                                    data = places_loc_toronto, size = 2, color = "blue")
+
+
+places_loc_etobicoke<- data.frame(lon = -79.513199, lat = 43.620495)
+places_loc_highpark<-data.frame(lat =43.645485,lon = -79.464752)
+places_loc_toronto1<-data.frame(lat = 43.653908,lon = -79.384293)
+places_loc_eastyork<-data.frame(lat = 43.691200,lon = -79.341667)
+places_loc_northyork<-data.frame(lat = 43.761539,lon = -79.411079)
+
+
+toronto_ggl_hybrid_map + geom_point(aes(x=lon, y=lat),
+                                    data = places_loc_toronto, 
+                                    alpha = 1, 
+                                    size = 4, 
+                                    color = "tomato") + 
+                        geom_encircle(aes(x=lon, y=lat),
+                        data = places_loc_etobicoke, size = 1, color = "blue") +
+                        geom_encircle(aes(x=lon, y=lat),
+                        data = places_loc_highpark, size = 1, color = "blue") +
+                        geom_encircle(aes(x=lon, y=lat),
+                        data = places_loc_toronto1, size = 1, color = "blue") +
+                        geom_encircle(aes(x=lon, y=lat),
+                        data = places_loc_eastyork, size = 1, color = "blue") +
+                        geom_encircle(aes(x=lon, y=lat),
+                        data = places_loc_northyork, size = 1, color = "blue")
+
+
+# Join with a line the five points
+par(mar=c(0,0,0,0))
+mymap2 <- ggplot(neigh, aes(x = longitud, y = latitud)) +
+  geom_polygon(fill = "white", colour = "black" )
+
+mymap2 + coord_map()
+
+mymap2 + coord_quickmap()
+
