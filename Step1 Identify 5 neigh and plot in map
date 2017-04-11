@@ -76,31 +76,32 @@ places_loc_eastyork<-data.frame(lat = 43.691200,lon = -79.341667)
 places_loc_northyork<-data.frame(lat = 43.761539,lon = -79.411079)
 
 ############Print the 5 places with their areas
+
 toronto_area <- gmap("Toronto, Ontario", zoom = 10, scale = 2)
 
-# transform central location into a true spatial object 
-#define coordinates and projection. 
-#coordinate reference system (CRS)
+#transform central location into a true spatial object 
+#defining coordinates and projection. 
+#reproject it to the coordinate reference system (CRS)
 #of the Google Maps 'RasterLayer' object.
 
-d_mrc<-function(d){ 
+d_crs<-function(d){ 
   coordinates(d) <- ~ lon + lat
   projection(d) <- "+init=epsg:4326"
   spTransform(d, CRS = CRS(projection(toronto_area)))
 }
 
+#Google's Marcator projection that comes in metres,
 #Convert  miles into meters.
 
-mile2meter <- function(y) {
+from_mile_meter <- function(y) {
   as.numeric(y)
   y * 1609.344
 }
 
 # Buffer creation
 # Using rgeos package will create a circular-shaped 'SpatialPolygons'
-# object 
-d_mrc_bff<-function(x,y){ 
-  gBuffer(d_mrc(x), width = mile2meter(as.numeric(y)))
+d_crs_bf<-function(x,y){ 
+  gBuffer(d_crs(x), width = from_mile_meter(as.numeric(y)))
 }
 
 et<- c(lon = -79.513199, lat = 43.620495)
@@ -117,9 +118,10 @@ neigh_radio
 dist<- list(e_hp, e_hp, t_hp, t_eay, eay_ny )
 plot(toronto_area)
 for (i in 1:5){
-  plot(d_mrc_bff(neigh_radio[i,],dist[i]), col = alpha("red", .35), add = TRUE)
-  points(d_mrc(neigh_radio[i,]), cex = 2, pch = 20)
+  plot(d_crs_bf(neigh_radio[i,],dist[i]), col = alpha("red", .35), add = TRUE)
+  points(d_crs(neigh_radio[i,]), cex = 2, pch = 20)
 }
+
 
 # Join with a line the five points
 par(mar=c(0,0,0,0))
