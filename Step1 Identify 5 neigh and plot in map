@@ -1,27 +1,30 @@
-#library
 library(ggmap)
 library(tidyverse)
 library(ggplot2)
 library(ggalt)
+library(dismo)
+library(rgeos)
+library(scales) # for `alpha()` function
 
-#Distance betweetn neigbourhoods
-e_hp<-round(as.numeric(select (mapdist('Etobicoke','High park', mode = 'driving'), miles))/2,2)
-t_hp<-round(as.numeric(select (mapdist('Toronto','High Park', mode = 'driving'), miles))/2,2)
-t_eay<-round(as.numeric(select (mapdist('Toronto','east york', mode = 'driving'), miles))/2,2)
-eay_ny<-round(as.numeric(select (mapdist('east york','Nort york', mode = 'driving'), miles))/2,2)
+
+#Distance between neigbourhoods
+e_hp<-round(as.numeric(dplyr::select (mapdist('Etobicoke','High park', mode = 'driving'), miles))/2,2)
+t_hp<-round(as.numeric(dplyr::select (mapdist('Toronto','High Park', mode = 'driving'), miles))/2,2)
+t_eay<-round(as.numeric(dplyr::select (mapdist('Toronto','east york', mode = 'driving'), miles))/2,2)
+eay_ny<-round(as.numeric(dplyr::select (mapdist('east york','Nort york', mode = 'driving'), miles))/2,2)
 
 #Choose the smallest distance to be the radio
 etobicoke<-c(43.620495,-79.513199,"Etobicoke", e_hp)
 highpark<-c(43.645485,-79.464752,"Highpark", e_hp)
 toronto<-c(43.653908,-79.384293,"Toronto", t_hp)
 eastyork<-c(43.691200,-79.341667,"EastYork", t_eay)
-northyork<-c(43.761539,-79.411079,"Northyork", t_eay)
+northyork<-c(43.761539,-79.411079,"Northyork", eay_ny)
 
 class(northyork)
 neigh<-data.frame(etobicoke, highpark, toronto , eastyork, northyork)
 neigh<-data.frame(t(neigh))
 colnames(neigh)<-c("latitud","longitud","place", "radio")
-
+neigh
 #plot map
 neigh$longitud<-as.numeric(as.character(neigh$longitud))
 neigh$latitud<-as.numeric(as.character(neigh$latitud))
@@ -29,7 +32,9 @@ neigh$radio<-as.numeric(as.character(neigh$radio))
 
 mymap<-qmap('toronto', zoom = 11)
 
-mymap + geom_point(data = neigh, aes(x = longitud, y = latitud), color="red", size=4, alpha=0.5)
+mymap + geom_point(data = neigh, aes(x = longitud, y = latitud), color="red", size=8, alpha=0.5)
+
+#################################################################
 
 # Get Toronto Coordinates 
 # get longitude and latitude
@@ -51,22 +56,23 @@ places_loc_toronto <- geocode(toronto_places)
 
 # Plot Google Road Map 
 #A close idea of twitters locations
-toronto_ggl_road_map + geom_point(aes(x=lon, y=lat),
+toronto_ggl_road_map + geom_point(aes(x=longitude, y=latitude),
                                   data = places_loc_toronto, 
                                   alpha = 1, 
-                                  size = 4, 
+                                  size = 8, 
                                   color = "tomato") + 
-                                  geom_encircle(aes(x=lon, y=lat),
-                                  data = places_loc_toronto, size = 2, color = "blue")
+                                  geom_encircle(aes(x=longitude, y=latitude),
+                                  data = places_loc_toronto, size = 1, color = "blue")
+
 
 # Google Hybrid Map 
-toronto_ggl_hybrid_map + geom_point(aes(x=lon, y=lat),
+toronto_ggl_hybrid_map + geom_point(aes(x=longitude, y=latitude),
                                     data = places_loc_toronto, 
                                     alpha = 1, 
-                                    size = 4, 
+                                    size = 8, 
                                     color = "tomato") + 
-                                    geom_encircle(aes(x=lon, y=lat),
-                                    data = places_loc_toronto, size = 2, color = "blue")
+                                    geom_encircle(aes(x=longitude, y=latitude),
+                                    data = places_loc_toronto, size = 1, color = "blue")
 
 
 places_loc_etobicoke<- data.frame(lon = -79.513199, lat = 43.620495)
@@ -75,13 +81,14 @@ places_loc_toronto1<-data.frame(lat = 43.653908,lon = -79.384293)
 places_loc_eastyork<-data.frame(lat = 43.691200,lon = -79.341667)
 places_loc_northyork<-data.frame(lat = 43.761539,lon = -79.411079)
 
-############Print the 5 places with their areas
+###########################################################################
 
 toronto_area <- gmap("Toronto, Ontario", zoom = 10, scale = 2)
 
-#transform central location into a true spatial object 
-#defining coordinates and projection. 
-#reproject it to the coordinate reference system (CRS)
+# transform central location into a true spatial object 
+#by defining coordinates and projection. 
+#For subsequent buffering and plotting purposes,
+#it needed to reproject it to the coordinate reference system (CRS)
 #of the Google Maps 'RasterLayer' object.
 
 d_crs<-function(d){ 
@@ -90,7 +97,7 @@ d_crs<-function(d){
   spTransform(d, CRS = CRS(projection(toronto_area)))
 }
 
-#Google's Marcator projection that comes in metres,
+# This is Google's Marcator projection that comes in metres,
 #Convert  miles into meters.
 
 from_mile_meter <- function(y) {
@@ -100,6 +107,7 @@ from_mile_meter <- function(y) {
 
 # Buffer creation
 # Using rgeos package will create a circular-shaped 'SpatialPolygons'
+# object 
 d_crs_bf<-function(x,y){ 
   gBuffer(d_crs(x), width = from_mile_meter(as.numeric(y)))
 }
@@ -122,6 +130,7 @@ for (i in 1:5){
   points(d_crs(neigh_radio[i,]), cex = 2, pch = 20)
 }
 
+########################################################################
 
 # Join with a line the five points
 par(mar=c(0,0,0,0))
@@ -131,4 +140,3 @@ mymap2 <- ggplot(neigh, aes(x = longitud, y = latitud)) +
 mymap2 + coord_map()
 
 mymap2 + coord_quickmap()
-
