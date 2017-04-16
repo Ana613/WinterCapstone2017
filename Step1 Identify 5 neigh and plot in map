@@ -13,7 +13,7 @@ t_hp<-round(as.numeric(dplyr::select (mapdist('Toronto','High Park', mode = 'dri
 t_eay<-round(as.numeric(dplyr::select (mapdist('Toronto','east york', mode = 'driving'), miles))/2,2)
 eay_ny<-round(as.numeric(dplyr::select (mapdist('east york','Nort york', mode = 'driving'), miles))/2,2)
 
-#Choose the smallest distance to be the radio
+#Choose the closest distance to be the radio
 etobicoke<-c(43.620495,-79.513199,"Etobicoke", e_hp)
 highpark<-c(43.645485,-79.464752,"Highpark", e_hp)
 toronto<-c(43.653908,-79.384293,"Toronto", t_hp)
