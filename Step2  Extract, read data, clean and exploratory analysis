@@ -71,10 +71,6 @@ library(ggplot2)
 #Realtor_northyork <-twListToDF(Realtor_northyork)
 #write.csv(Realtor_northyork, file="C:/..Realtor_northyork.csv")
 
-
-
-
-
 #READ THE DATA
 #For Real Estate data
 RS_etobicoke<-read.csv(file="C:/../RS_etobicoke.csv"
