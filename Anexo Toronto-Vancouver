@@ -1,0 +1,354 @@
+#library
+library(twitteR)
+require(RCurl)
+library(ggplot2)
+library(tm) # Framework for text mining. 
+require(tm)
+library(data.table)
+library(qdap) # Quantitative analysis  
+library(qdapDictionaries) 
+library(magrittr)
+library(RColorBrewer) # Generate palette of colours for plots.
+library(Rcpp)
+library(ggplot2) # Plot word frequencies. 
+library(scales) # Include commas in numbers. 
+library(Rgraphviz) # Correlation plots.
+library(wordcloud)
+library(RWeka)
+library(SnowballC)
+library(caret)
+library(e1071)
+library(kernlab)
+library(party)
+library(FSelector)
+library(plyr)
+require(plyr)
+library(dplyr) # Data wrangling, pipe operator %>%().
+library(class)
+library(stringr)
+library(graph)
+require(grid)
+library(stringr)
+library(gmodels)
+
+
+Consumer_Key<-"XXXXXXXXXXXXX"
+Consumer_Secret<-"XXXXXXXXXXX"
+access_token <- "XXXXXXXXXXXXXXXXXX"
+access_token_secret <- "XXXXXXXXXXXX"
+setup_twitter_oauth(Consumer_Key,Consumer_Secret, access_token,access_token_secret)
+
+##Search twitter, convert to data frame and keep in the computer disk
+
+
+###Real Estate data
+
+Vancouver= searchTwitter('real estate', n=2000, lang="en",sinceID = NULL, geocode="49.246292,-123.116226,10km",retryOnRateLimit=2000)
+Toronto = searchTwitter('real estate', n=2000, lang="en",sinceID = NULL, geocode="43.761539,-79.411079,10km",retryOnRateLimit=2000)
+
+#Convert to data frame and keep a copy in disk
+RS_toronto<- twListToDF(Toronto)
+write.csv(RS_toronto, file="C:/Users/../REDOING CAPSTONE/RS_toronto.csv")
+RS_vancouver<- twListToDF(Vancouver)
+write.csv(RS_vancouver, file="C:/Users/../REDOING CAPSTONE/RS_vancouver.csv")
+
+#Read data from disk
+RS_vancouver<-read.csv(file="C:/Users/../RS_vancouver.csv"
+                         ,header=T, stringsAsFactors = FALSE)
+RS_toronto<-read.csv(file="C:/Users/../RS_toronto.csv"
+                         ,header=T, stringsAsFactors = FALSE)
+
+#Select the text data and add location
+#Toronto
+RS_toronto <- data.frame(RS_toronto$text, "RS_toronto")
+colnames(RS_toronto) <- c("text","location")
+RS_toronto$text<- as.character(RS_toronto$text, stringsAsFactors=FALSE)
+RS_toronto$location<- factor(RS_toronto$location)
+#Vancouver
+RS_vancouver<- data.frame(RS_vancouver$text, "RS_vancouver")
+colnames(RS_vancouver) <- c("text","location")
+RS_vancouver$text<- as.character(RS_vancouver$text, stringsAsFactors=FALSE)
+RS_vancouver$location<- factor(RS_vancouver$location)
+
+#Clean function
+CleanText <- function(x) {
+  
+  x <- gsub("http\\S+\\s*", "", x) ## Remove URLs
+  x <- gsub("http\\w+", "", x) ## Remove html links
+  x <- gsub("\\b+RT", "", x) ## Remove RT
+  x <- gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", x) ## Remove retweet entities
+  x <- gsub("#\\S+", "", x) ## Remove Hashtags
+  x <- gsub("@\\S+", "", x) ## Remove Mentions
+  x <- gsub("@\\w+", "", x)  ## Remove at people
+  x <- gsub("[[:cntrl:]]", "", x) ## Remove Controls and special characters
+  x <- gsub("[[:punct:]]", "", x) ## Remove Punctuations
+  x <- gsub("^[[:space:]]*","",x) ## Remove leading whitespaces
+  x <- gsub("[[:space:]]*$","",x) ## Remove trailing whitespaces
+  x <- gsub("\\d", "", x) ## Remove Controls and special characters
+  x <- gsub(" +"," ",x) ## Remove extra whitespaces
+  x <- gsub("[ \t]{2,}", "", x)# Remove unnecessary spaces
+  x <- gsub("^\\s+|\\s+$", "", x)# Remove unnecessary spaces
+  x <- gsub("[^0-9a-zA-Z ,./?><:;'~`!@#&*']","", x)# Remove unnecessary spaces
+  x <- gsub("[[:digit:]]", "", x) ## Remove numbers
+  
+  return (x)
+}
+
+#Function to generate corpus and preprosessing steps to remove unnecesary data
+Cuerpo <- function(x,a) {
+  doc.vec <- VectorSource(x)
+  corpus<-Corpus(doc.vec)
+  corpus.tmp <- tm_map(corpus, removePunctuation)
+  corpus.tmp <- tm_map(corpus.tmp, stripWhitespace)
+  corpus.tmp <- tm_map(corpus.tmp,  content_transformer(tolower))
+  if (a == "Real")
+  {
+    corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                     "real","estate","property","realestate",
+                                                     "toronto","torontos",
+                                                     "properti", "estat",
+                                                     "vancouver", "canada","canadian"))
+  }  else { 
+    if (a == "Realtor") {
+      corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                       "gt","realtor","toronto",
+                                                       "torontos", "realtormag"))
+    }
+  }
+  
+  #remove own words that are highly repeated as well as on-sense word
+  ##length(stopwords("english"))
+  #stopwords("english") #Learn which are the stopwords
+  toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
+  corpus.tmp <- tm_map(corpus.tmp, toString, "accredited mortgage professional", "amp")
+  corpus.tmp <- tm_map(corpus.tmp, toString, "average", "ave") 
+  corpus.tmp<- tm_map(corpus.tmp, toString, "home price", "hp")
+  corpus.tmp<- tm_map(corpus.tmp, toString, "standard", "st")
+  corpus.tmp <- tm_map(corpus.tmp, removeNumbers)
+  #Stemming uses an algorithm that removes common word endings for English words, 
+  #such as "es", "ed" and "'s".
+  corpus.tmp <- tm_map(corpus.tmp, stemDocument, language="en")
+  corpus.tmp <- tm_map(corpus.tmp, PlainTextDocument)
+  
+  return(corpus.tmp)
+}
+
+#Ngram function grams from 1 through 4
+NgramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=1, max =4))
+}
+
+#Convert 0 to "NO and 1 to "YES"
+convert_counts <- function(x) {
+  x <- ifelse(x > 0, "Yes", "No")
+}
+
+#Metric evaluation function
+evaluar <- function(x) {
+  n <- sum(x) # number of instances
+  nc <- nrow(x) # number of classes
+  diag <- diag(x) # number of correctly classified instances per class 
+  rowsums <-apply(x, 1, sum) # number of instances per class
+  colsums = apply(x, 2, sum) # number of predictions per class
+  p = rowsums / n # distribution of instances over the actual classes
+  q = colsums / n # distribution of instances over the predicted classes
+  
+  #Accuracy
+  #A key metric to start with is the overall classification accuracy. 
+  #It is defined as the fraction of instances that are correctly classified.
+  
+  accuracy = sum(diag) / n 
+  accuracy 
+  
+  #Compute precision, recall, and the F-1 score.
+  #Precision is the fraction of documents assigned to the class that
+  #are actualy about the class 
+  #THe perfect classification is 1 or close to 1 
+  #1 means zero mistakes
+  precision = diag / colsums 
+  precision
+  # Sensitivite or Recall is the fraction of the documents classified correctly
+  #the True possitive rate
+  #TP/(TP + FN) in this case should be
+  recall = diag / rowsums 
+  recall
+  f1 = 2 * precision * recall / (precision + recall) 
+  f1
+  resultado<-data.frame(precision, recall, f1) 
+}
+
+
+RS_toronto$indice<-factor(1:2000)
+RS_vancouver$indice<-factor(1:2000)
+
+#Create 10 times train(2000)2/3 and test(1000) 1/3 of data
+#then every one of those 10 is evaluated against both methods
+#Create a list of 10 confusion matrix to evaluate for Bayes and
+#A list of 10 confusion matrix for SVM
+
+train_vc<-as.data.frame
+test_vc<-as.data.frame
+mycross_ksvm<-as.list(0)
+mycross<-as.list(0)
+Mylist_naives<-as.list(0)
+Mylist_ksvm<-as.list(0)
+
+#The x value create 10 columns with random  value to be used as
+# indice into train and test data
+x <- replicate(n = 10,expr = {sample(2000,1000)})
+
+#Loop that will return 10 different confusion matrix 
+for (i in 1:10){
+  v<- x[,i]
+  
+  #RS_vancouver
+  train_vc <- RS_vancouver[v,]
+  test_vc <- RS_vancouver[-v,]
+  
+  #RS_toronto
+  train_to <- RS_toronto[v,]
+  test_to <- RS_toronto[-v,]
+  
+  #Join train data in one data frame, clean and check data type
+  RS_total_train= rbind(train_vc, train_to)
+  attach(RS_total_train)
+  RS_clean_train <- subset(RS_total_train, select = -c(indice))
+  RS_clean_train<-as.data.frame(sapply(RS_clean_train,CleanText))
+  RS_clean_train<-cbind(RS_clean_train,indice)
+  RS_clean_train$location<-factor(RS_clean_train$location)
+  RS_clean_train$text<-lapply(RS_clean_train$text, iconv,from ="ISO-8859-15", to="UTF-8")
+  RS_clean_train$indice<-as.factor(RS_clean_train$indice) 
+  
+  #Join test data in one data frame, clean and check data type
+  RS_total_test= rbind(test_vc, test_to)
+  attach(RS_total_test)
+  RS_clean_test<- subset(RS_total_test, select = -c(indice))
+  RS_clean_test<-as.data.frame(sapply(RS_clean_test,CleanText))
+  RS_clean_test<-cbind(RS_clean_test,indice)
+  RS_clean_test$location<-factor(RS_clean_test$location)
+  RS_clean_test$text<-lapply(RS_clean_test$text, iconv,from ="ISO-8859-15", to="UTF-8")
+  RS_clean_test$indice<-as.factor(RS_clean_test$indice) 
+  
+  #Build the corpus train data
+  corpus.tmp<-Cuerpo(RS_clean_train$text,"Real")
+  
+  #Create the dtm using grams from 1 through 4 
+  train_dtm_ngram<-DocumentTermMatrix(corpus.tmp, control =list(tokenize = NgramTokenizer))
+  train_dtm_docuM<-DocumentTermMatrix(corpus.tmp)
+  
+  #remove sparce data
+  train_rmspac_ngram <- removeSparseTerms(train_dtm_ngram, 0.97)
+  train_rmspac_docuM <- removeSparseTerms(train_dtm_docuM, 0.97)
+  
+  #Bag of Words vector of frequency terms
+  train_BOW_ngram<- findFreqTerms(train_rmspac_ngram)
+  
+  train_BOW_matrix<- as.matrix(train_rmspac_ngram)
+  
+  #Yes or no 
+  dtm_freq_train<- train_rmspac_ngram[ , train_BOW_ngram]
+  train <- apply(dtm_freq_train, MARGIN = 2, convert_counts)
+  
+  #Create NgramTrain
+  NgramTrain<- data.frame(location = RS_clean_train$location , train)
+  
+  #Create a vector of corpus for review text on test data (using function Cuerpo)
+  corpus_text.tmp<-Cuerpo(RS_clean_test$text,"Real")
+  
+  test_dtm_ngram<-DocumentTermMatrix(corpus_text.tmp, control =list(tokenize = NgramTokenizer, 
+                                                                    dictionary = train_BOW_ngram))
+  
+  test_matrix <-as.matrix(test_dtm_ngram)
+  dtm_freq_test <- test_dtm_ngram[ , train_BOW_ngram]
+  ##Convert to YEs or No
+  test <- apply( dtm_freq_test, MARGIN = 2, convert_counts)
+  
+  #Create NgramTest
+  NgramTest<- data.frame(location = RS_clean_test$location,  test)
+  
+  #Naive Bayes
+  BOW_Naives<- naiveBayes(location ~ ., data = NgramTrain, laplace = 1)
+  testPred<-predict(BOW_Naives, newdata = NgramTest)
+  Mypred_naives <- table(testPred,NgramTest[,1])
+  Mylist_naives[[i]]<-Mypred_naives
+  
+  mycross[i]<-CrossTable(testPred, NgramTest[,1], prop.chisq = FALSE, 
+                         prop.t = FALSE, dnn = c('predicted', 'actual'))
+  
+  #KSVM
+  BOW_ksvm<-ksvm(location ~ ., data = NgramTrain)
+  pred_ksvm <- predict(BOW_ksvm, newdata = NgramTest)
+  Mypred_ksvm<-table(pred_ksvm,NgramTest[,1])
+  Mylist_ksvm[[i]]<- Mypred_ksvm
+  
+  mycross_ksvm[i]<- CrossTable(pred_ksvm, NgramTest[,1], prop.chisq = FALSE,
+                               prop.t = FALSE, dnn = c('predicted', 'actual'))
+  
+}
+
+class(Mylist_naives)
+sapply(Mylist_naives, class)
+
+#For bayes
+true_pos<-0
+false_pos<-0
+false_neg<-0
+true_neg<-0
+
+for (i in 1:10){
+  true_pos[i]<-list(Mylist_naives[i][[1]][1,1])
+  false_pos[i]<-list(Mylist_naives[i][[1]][1,2])
+  false_neg[i]<-list(Mylist_naives[i][[1]][2,1])
+  true_neg[i]<-list(Mylist_naives[i][[1]][2,2])
+  
+}
+
+true_pos1<-mean(sapply(true_pos, mean))
+false_pos1<-mean(sapply(false_pos, mean))
+false_neg1<-mean(sapply(false_neg, mean))
+true_neg1<-mean(sapply(true_neg, mean))
+
+
+my_final_Bayes <-matrix(c(round(true_pos1,0),
+                          round(false_neg1,0),
+                          round(false_pos1,0), 
+                          round(true_neg1,0)), nrow=2,ncol=2)
+rownames(my_final_Bayes)<-c("RStoronto","RSvancouver")
+colnames(my_final_Bayes)<-c("RStoronto","RSvancouver")
+my_final_Bayes 
+#Evaluate Bayes
+resultado<-evaluar(my_final_Bayes)
+resultado
+
+#For SVM
+true_pos2<-0
+false_pos2<-0
+false_neg2<-0
+true_neg2<-0
+
+
+for (i in 1:10){
+  true_pos2[i]<-list(Mylist_ksvm[i][[1]][1,1])
+  false_pos2[i]<-list(Mylist_ksvm[i][[1]][1,2])
+  false_neg2[i]<-list(Mylist_ksvm[i][[1]][2,1])
+  true_neg2[i]<-list(Mylist_ksvm[i][[1]][2,2])
+  
+}
+
+true_pos13<-mean(sapply(true_pos2, mean))
+false_pos13<-mean(sapply(false_pos2, mean))
+false_neg13<-mean(sapply(false_neg2, mean))
+true_neg13<-mean(sapply(true_neg2, mean))
+
+my_final_svm <-matrix(c(round(true_pos13,0), 
+                        round(false_neg13,0),
+                        round(false_pos13,0), 
+                        round(true_neg13,0)), nrow=2,ncol=2)
+rownames(my_final_svm)<-c("RStoronto","RSvancouver")
+colnames(my_final_svm)<-c("RStoronto","RSvancouver")
+
+my_final_svm
+
+#Evaluate SVM
+resultado<-evaluar(my_final_svm)
+resultado
