@@ -1,8 +1,66 @@
+library(tm) # Framework for text mining. 
+require(tm)
+library(data.table)
+library(qdap) # Quantitative analysis  
+library(qdapDictionaries) 
+library(magrittr)
+library(RColorBrewer) # Generate palette of colours for plots.
+library(Rcpp)
+library(ggplot2) # Plot word frequencies. 
+library(scales) # Include commas in numbers. 
+library(Rgraphviz) # Correlation plots.
+library(wordcloud)
+library(RWeka)
+library(SnowballC)
+library(caret)
+#library(rminer)
+library(e1071)
+library(kernlab)
+library(party)
+library(FSelector)
+library(plyr)
+require(plyr)
+library(dplyr) # Data wrangling, pipe operator %>%().
+library(class)
+library(stringr)
+library(graph)
+require(grid)
+library(stringr)
+# the library(Rgraphviz)  Correlation plots is not available in CRAN
+# In order to print it used a bioconductor
+# Rgraphviz (Hansen et al., 2016) from the BioConductor repository for R 
+# (bioconductor.org) is used to plot the network graph that displays
+# the correlation between chosen words in the corpus. 
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("Rgraphviz")
+
 options(mc.cores=1) 
+
+# Removing Sparse Terms
+# Non-frequent terms are not needed, therefore have been removed 
+# using removeSparseTerms() function 
+
+dim(train_dtm_ngram)
+dim(train_dtm_docuM)
+
+train_rmspac_ngram <- removeSparseTerms(train_dtm_ngram, 0.92)
+train_rmspac_docuM <- removeSparseTerms(train_dtm_docuM, 0.92)
+
+dim(train_rmspac_ngram)
+dim(train_rmspac_docuM)
+
+#inspect(train_rmspac_ngram)
+#inspect(train_rmspac_docuM)
+
+inspect(train_rmspac_ngram[1:6,1:6])
+inspect(train_rmspac_docuM[1:3,1:5])
+
+
+
 #Use the data with sparse terms of ngrams
 train_rmspac_ngram 
 
-#Sparce terms with 3% of the instances
+#Sparce terms with 8% of the instances
 str(train_rmspac_ngram)
 dim(train_rmspac_ngram)
 
@@ -12,7 +70,9 @@ train_BOW_ngram<- findFreqTerms(train_rmspac_ngram)
 #terms  
 train_BOW_ngram
 str(train_BOW_ngram)
-checkDocument(train_BOW_ngram, 15)
+checkDocument(train_BOW_ngram, 5)
+checkDocument(train_BOW_ngram, 1)
+class(train_BOW_ngram)
 
 #Convert to matrix
 #This will be used to create the training data set
@@ -22,58 +82,60 @@ train_BOW_matrix<- as.matrix(train_rmspac_ngram)
 dim(train_BOW_matrix)
 
 #Checkthe weight values of the first twenty terms in the first two records
-train_BOW_matrix[1:2,1:20]
+train_BOW_matrix[1:2,1:6]
 
 
 #The raw word or term frequencies indicate the significance of a word or a set of words in each document. 
 #Words that happen with greater frequency in a document are better descriptors 
 #of the contents of that document
-#Show the average frequency of the top 20 most frequent words
+#Show the average frequency of the most frequent words
 mean_train <- sort(colMeans(as.matrix(train_rmspac_ngram)), decreasing = TRUE)
 mean_train
-average_top20<- mean(mean_train[1:20])
-average_top20
+average_top<- mean(mean_train)
+average_top
 
 
 #GRaph
 par(las=2) 
 par(mar=c(5,5,1,1)) 
-barplot(mean_train[1:20], border =NA, main = "Top 20 train data",
+barplot(mean_train, border =NA, main = "Train data",
         ylab = "Average", ylim=c(0,1))
 
+dtm_freq_train<- train_rmspac_ngram[ , train_BOW_ngram]
 
-#Combine the indice and the location with the document term matrix to create 
+
+#The Naive Bayes classifier is typically trained on data with categorical 
+#features.  The cells in the sparse matrix 
+#are numeric and measure the number of times a word appears in a message.
+#We need to change this to a categorical variable that simply indicates
+#yes or no depending on whether the word appears at all.
+
+convert_counts <- function(x) {
+  x <- ifelse(x > 0, "Yes", "No")
+}
+
+# MARGIN = 1 is used for rows
+# MARGIN =2 for columns
+train <- apply(dtm_freq_train, MARGIN = 2, convert_counts)
+
+#Combine the location with the categorical matrix to create 
 #classifier training data
 
-NgramTrain<- data.frame(location = RS_clean_train$location ,indice = RS_clean_train$indice, train_BOW_matrix)
+NgramTrain<- data.frame(location = RS_clean_train$location , train)
 
 head(NgramTrain)
+table(NgramTrain$location)
 
-#Create a vector of corpus for review text on test data
-test_corpus<-Corpus(DataframeSource(as.matrix(RS_clean_test$text)))
-
-test_corpus<- tm_map(test_corpus, removePunctuation)
-test_corpus <- tm_map(test_corpus, stripWhitespace)
-test_corpus <- tm_map(test_corpus,  content_transformer(tolower))
-test_corpus <- tm_map(test_corpus, removeWords, c(stopwords("english"),
-                    "real","estate","property","realestate","toronto","torontos",
-                    "properti", "estat",
-                    "canadaeduaubcedubuaeduaubcedubua"))
-toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
-test_corpus <- tm_map(test_corpus, toString, "accredited mortgage professional", "amp")
-test_corpus <- tm_map(test_corpus, toString, "average", "ave") 
-test_corpus <- tm_map(test_corpus, toString, "home price", "hp")
-test_corpus<- tm_map(test_corpus, toString, "standard", "st")
-test_corpus <- tm_map(test_corpus, removeNumbers)
-test_corpus <- tm_map(test_corpus, stemDocument, language="en")
-corpus_text.tmp <- tm_map(test_corpus, PlainTextDocument)
+#Create a vector of corpus  using the clean test dataframe and
+#the function Cuerpo
+corpus_text.tmp<-Cuerpo(RS_clean_test$text,"Real")
 
 inspect(corpus_text.tmp[1:5])
-
+checkDocument(corpus_text.tmp, 10)
 #create test_dtm_ngram which is a document term matrix that contains 
 # the ngrams of the  terms using
 #train_BOW_ngram as a dictionary since we only want that the
-#document term matrix will be done based on the training data
+#document term matrix will be done based on the most frequent training data
 
 test_dtm_ngram<-DocumentTermMatrix(corpus_text.tmp, control =list(tokenize = NgramTokenizer, 
                   dictionary = train_BOW_ngram))
@@ -84,23 +146,289 @@ dim(test_dtm_ngram)
 
 #transform the format from Document Term Matrix into Matrix
 test_matrix <-as.matrix(test_dtm_ngram)
+dtm_freq_test <- test_dtm_ngram[ , train_BOW_ngram]
 
-#combine the indice, and the location with the 
-#test_matrix into a data frame
+#Convert the Matrix numerical data to  categorical YEs or No
+test <- apply( dtm_freq_test, MARGIN = 2, convert_counts)
+test
 
-NgramTest<- data.frame(location = RS_clean_test$location, indice= RS_clean_test$indice, test_matrix)
 
-
-#Show the average term frequencies  of the top 20 most frequent terms in test
+#Show the average term frequencies  of the  frequent terms in test
 mean_test <- sort(colMeans(test_matrix), decreasing = TRUE)
-average_top20_test<- mean(mean_test[1:20])
-average_top20_test
+average_test<- mean(mean_test)
+average_test
 
 
 #GRaph
 par(las=2) 
 par(mar=c(5,5,1,1)) 
-barplot(mean_test[1:20], border =NA, main = "Top 20 test data",
+barplot(mean_test, border =NA, main = "Test data",
+        ylab = "Average", ylim=c(0,1))
+
+
+#Combine the location from previous test data with the categorical matrix 
+NgramTest<- data.frame(location = RS_clean_test$location,  test)
+head(NgramTest)
+table(NgramTest$location)
+
+##################################################################################
+
+#COnstruct the classification model with 1-2-3-4 gram, the frequency and 97 sparcity
+
+#Classificarion using naiveBayes from e1071 and ksvm from kernlab
+#Take just the five most frequency words
+#naiveBayes -e1071 classifier
+library(e1071)
+library(kernlab)
+
+##prop.table(table(NgramTrain))
+##prop.table(table(NgramTest))
+
+##Adding the Laplace estimator reduced the number of false positives 
+##and the number of false negatives 
+
+BOW_Naives<- naiveBayes(location ~ ., data = NgramTrain, laplace = 1)
+class(BOW_Naives)
+summary(BOW_Naives)
+str(BOW_Naives)
+length(BOW_Naives)
+BOW_Naives
+testPred<-predict(BOW_Naives, newdata = NgramTest)
+
+
+length(testPred)
+length(NgramTest[,1])
+table(testPred)
+Mypred_naives<-table(testPred,NgramTest[,1])
+
+Mypred_naives
+#In a confusion matrix, the rows are the actual group of the data,
+#while the columns are the predicted group of the data.
+
+#confusion matrix from simulated classification results.
+#The confusion matrix provides a tabular summary of the actual
+#class labels vs. the predicted ones.
+
+#The important ways to compute are:
+#Sensitivite or Recall is the fraction of the documents classified correctly
+#the True possitive rate
+#TP/(TP + FN)
+#False positive rate 
+
+# Variables to compute the evaluation metrics
+
+#Metric evaluation function
+evaluar <- function(x) {
+  n <- sum(x) # number of instances
+  nc <- nrow(x) # number of classes
+  diag <- diag(x) # number of correctly classified instances per class 
+  rowsums <-apply(x, 1, sum) # number of instances per class
+  colsums = apply(x, 2, sum) # number of predictions per class
+  p = rowsums / n # distribution of instances over the actual classes
+  q = colsums / n # distribution of instances over the predicted classes
+  
+  #Accuracy
+  #A key metric to start with is the overall classification accuracy. 
+  #It is defined as the fraction of instances that are correctly classified.
+  
+  accuracy = sum(diag) / n 
+  accuracy 
+  
+  #Compute precision, recall, and the F-1 score.
+  #Precision is the fraction of documents assigned to the class that
+  #are actually about the class 
+  #THe perfect classification is 1 or close to 1 
+  #1 means zero mistakes
+  precision = diag / colsums 
+  precision
+  # Sensitivite or Recall is the fraction of the documents classified correctly
+  #the True possitive rate
+  #TP/(TP + FN) in this case should be
+  recall = diag / rowsums 
+  recall
+  f1 = 2 * precision * recall / (precision + recall) 
+  f1
+  resultado<-data.frame(precision, recall, f1) 
+}
+
+resultado_Bayes<-evaluar(Mypred_naives)
+#accuracy tells the documents that were truly 
+#in a given class how many were correctly labeled in that class by 
+#the algorithm. 
+#Precision shows the documents that were labeled in a given class,
+#how many were correctly placed there. 
+#F1, combines precision and recall
+
+
+##3Compare the predictions to the true values. 
+##Add some additional parameters to eliminate unnecessary cell proportions
+#and use the dnn parameter (dimension names) to relabel the rows
+#and columns:
+
+library(gmodels)
+
+CrossTable(testPred, NgramTest[,1], prop.chisq = FALSE, 
+           prop.t = FALSE, dnn = c('predicted', 'actual'))
+
+
+
+#CLassifier ksvm
+BOW_ksvm<-ksvm(location ~., data = NgramTrain)
+class(BOW_ksvm)
+summary(BOW_ksvm)
+str(BOW_ksvm)
+BOW_ksvm
+fitted(BOW_ksvm)
+pred_ksvm <- predict(BOW_ksvm,newdata = NgramTest)
+
+length(pred_ksvm)
+table(pred_ksvm)
+Mypred_ksvm<-table(pred_ksvm,NgramTest[,1])
+Mypred_ksvm
+
+#confusion matrix from simulated classification results.
+#The confusion matrix provides a tabular summary of the actual
+#class labels vs. the predicted ones.
+
+resultado_ksvm<-evaluar(Mypred_ksvm)
+
+CrossTable(pred_ksvm, NgramTest[,1], prop.chisq = FALSE, 
+           prop.t = FALSE, dnn = c('predicted', 'actual'))
+
+
+
+###########################################################################
+
+options(mc.cores=1) 
+#REALTOR DATA
+# Removing Sparse Terms
+# Non-frequent terms are not needed, therefore have been removed 
+# using removeSparseTerms() function 
+
+dim(train_dtm_ngram_real)
+dim(train_dtm_docuM_real)
+
+train_rmspac_ngram_real <- removeSparseTerms(train_dtm_ngram_real, 0.92)
+train_rmspac_docuM_real <- removeSparseTerms(train_dtm_docuM_real, 0.92)
+
+dim(train_rmspac_ngram_real)
+dim(train_rmspac_docuM_real)
+
+
+inspect(train_rmspac_ngram_real[1:6,1:3])
+inspect(train_rmspac_docuM_real[1:3,1:3])
+
+#Use the data with sparse terms of ngrams
+train_rmspac_ngram_real
+
+#Sparce terms with 8% of the instances
+str(train_rmspac_ngram_real)
+dim(train_rmspac_ngram_real)
+
+#Bag of Words vector of frequency terms
+train_BOW_ngram_real<- findFreqTerms(train_rmspac_ngram_real)
+
+#terms  
+train_BOW_ngram_real
+str(train_BOW_ngram_real)
+checkDocument(train_BOW_ngram_real, 3)
+checkDocument(train_BOW_ngram_real, 1)
+class(train_BOW_ngram_real)
+
+#Convert to matrix
+#This will be used to create the training data set
+
+train_BOW_matrix_real<- as.matrix(train_rmspac_ngram_real)
+
+dim(train_BOW_matrix_real)
+
+#Checkthe weight values of the first twenty terms in the first two records
+train_BOW_matrix_real[1:2,1:3]
+
+
+#The raw word or term frequencies indicate the significance of a word or a set of words in each document. 
+#Words that happen with greater frequency in a document are better descriptors 
+#of the contents of that document
+#Show the average frequency of the most frequent words
+mean_train_real <- sort(colMeans(as.matrix(train_rmspac_ngram_real)), decreasing = TRUE)
+mean_train_real
+average_real<- mean(mean_train_real)
+average_real
+
+
+#GRaph
+par(las=2) 
+par(mar=c(5,5,1,1)) 
+barplot(mean_train_real, border =NA, main = "Train data",
+        ylab = "Average", ylim=c(0,1))
+
+
+dtm_freq_train_real<- train_rmspac_ngram_real[ , train_BOW_ngram_real]
+
+
+#The Naive Bayes classifier is typically trained on data with categorical 
+#features.  The cells in the sparse matrix 
+#are numeric and measure the number of times a word appears in a message.
+#We need to change this to a categorical variable that simply indicates
+#yes or no depending on whether the word appears at all.
+
+# MARGIN = 1 is used for rows
+train_real <- apply(dtm_freq_train_real, MARGIN = 2, convert_counts)
+
+
+
+#Combine  location with the categorical matrix to create 
+#classifier training data
+
+NgramTrain_real<- data.frame(location = Realtor_clean_train$location, train_real)
+
+head(NgramTrain_real)
+
+#Create a vector of corpus for review text on test data
+corpus_text_real.tmp<-Cuerpo(Realtor_clean_test$text,"Realtor")
+
+inspect(corpus_text_real.tmp[1:3])
+
+
+#create test_dtm_ngram which is a document term matrix that contains 
+# the ngrams of the  terms using
+#train_BOW_ngram as a dictionary since we only want that the
+#document term matrix will be done based on the most frequent training data
+
+test_dtm_ngram_real<-DocumentTermMatrix(corpus_text_real.tmp, control =list(tokenize = NgramTokenizer, 
+                                                                  dictionary = train_BOW_ngram_real))
+
+test_dtm_ngram_real
+str(test_dtm_ngram_real)
+dim(test_dtm_ngram_real)
+
+#transform the format from Document Term Matrix into Matrix
+test_matrix_real <-as.matrix(test_dtm_ngram_real)
+
+dtm_freq_test_real <- test_dtm_ngram_real[ , train_BOW_ngram_real]
+##Convert to YEs or No
+test_real <- apply( dtm_freq_test_real, MARGIN = 2, convert_counts)
+test_real
+#Add location with the 
+#test_matrix into a data frame
+
+
+#Add location with the 
+#test_matrix into a data frame
+
+NgramTest_real<- data.frame(location = Realtor_clean_test$location,  test_real)
+head(NgramTest_real)
+
+#Show the average term frequencies  of the  frequent terms in test
+mean_test_real <- sort(colMeans(test_matrix_real), decreasing = TRUE)
+average_test_real<- mean(mean_test_real)
+average_test_real
+
+
+#GRaph
+par(las=2) 
+par(mar=c(5,5,1,1)) 
+barplot(mean_test_real, border =NA, main = "Test data",
         ylab = "Average", ylim=c(0,1))
 
 
@@ -113,96 +441,65 @@ barplot(mean_test[1:20], border =NA, main = "Top 20 test data",
 library(e1071)
 library(kernlab)
 
-BOW_Naives<- naiveBayes(location ~ market + tax + hous + buyer + foreign, data = NgramTrain)
-summary(BOW_Naives)
-str(BOW_Naives)
-length(BOW_Naives)
-BOW_Naives
-testPred<-predict(BOW_Naives, newdata = NgramTest)
+BOW_Naives_real<- naiveBayes(location ~ ., data = NgramTrain_real,laplace = 1)
+class(BOW_Naives_real)
+summary(BOW_Naives_real)
+str(BOW_Naives_real)
+length(BOW_Naives_real)
+BOW_Naives_real
+testPred_real<-predict(BOW_Naives_real, newdata = NgramTest_real)
 
-length(testPred)
-table(testPred)
-Mypred_naives<-table(testPred,NgramTest[,1])
-Mypred_naives
-classAgreement(Mypred_naives)
+length(testPred_real)
+length(NgramTest_real[,1])
+table(testPred_real)
+Mypred_naives_real<-table(testPred_real,NgramTest_real[,1])
+Mypred_naives_real
+
+
+#In a confusion matrix, the rows are the actual group of the data,
+#while the columns are the predicted group of the data.
+
+
+
 #confusion matrix from simulated classification results.
 #The confusion matrix provides a tabular summary of the actual
 #class labels vs. the predicted ones.
-confusionMatrix(testPred, NgramTest[,1], 
-                positive = "Positive", dnn = c("Prediction", "True"))
 
-# Variables to compute the evaluation metrics
+#The important ways to compute are:
+#Sensitivite or Recall is the fraction of the documents classified correctly
+#the True possitive rate
+#TP/(TP + FN)
+#False positive rate 
 
-n = sum(Mypred_naives) # number of instances
-nc = nrow(Mypred_naives) # number of classes
-diag = diag(Mypred_naives) # number of correctly classified instances per class 
-rowsums = apply(Mypred_naives, 1, sum) # number of instances per class
-colsums = apply(Mypred_naives, 2, sum) # number of predictions per class
-p = rowsums / n # distribution of instances over the actual classes
-q = colsums / n # distribution of instances over the predicted classes
+#Evaluation metrics
+resultado_Bayes_real<-evaluar(Mypred_naives_real)
 
-#Accuracy
-#A key metric to start with is the overall classification accuracy. 
-#It is defined as the fraction of instances that are correctly classified.
+library(gmodels)
 
-accuracy = sum(diag) / n 
-accuracy 
+CrossTable(testPred_real, NgramTest_real[,1], prop.chisq = FALSE, prop.t = FALSE, dnn = c('predicted', 'actual'))
 
-##Per-class Precision, Recall, and F-1
-#Compute precision, recall, and the F-1 score.
-# since the class labels does not look uniformly distribuited
 
-precision = diag / colsums 
-recall = diag / rowsums 
-f1 = 2 * precision * recall / (precision + recall) 
-data.frame(precision, recall, f1) 
 
-BOW_ksvm<-ksvm(location ~ market + tax + hous + buyer + foreign, data = NgramTrain, 
-                 type="C-svc", kernel="rbf",kpar=list(sigma=1),C=1)
 
-summary(BOW_ksvm)
-str(BOW_ksvm)
-BOW_ksvm
-fitted(BOW_ksvm)
-pred_ksvm <- predict(BOW_ksvm,newdata = NgramTest)
+#CLassifier ksvm
+BOW_ksvm_real<-ksvm(location ~ ., data = NgramTrain_real)
+class(BOW_ksvm_real)
+summary(BOW_ksvm_real)
+str(BOW_ksvm_real)
+BOW_ksvm_real
+fitted(BOW_ksvm_real)
+pred_ksvm_real <- predict(BOW_ksvm_real,newdata = NgramTest_real)
 
-length(pred_ksvm)
-table(pred_ksvm)
-Mypred_ksvm<-table(pred_ksvm,NgramTest[,1])
-Mypred_ksvm
-classAgreement(Mypred_ksvm)
+length(pred_ksvm_real)
+table(pred_ksvm_real)
+Mypred_ksvm_real<-table(pred_ksvm_real,NgramTest_real[,1])
+Mypred_ksvm_real
+
 #confusion matrix from simulated classification results.
 #The confusion matrix provides a tabular summary of the actual
 #class labels vs. the predicted ones.
-confusionMatrix(pred_ksvm, NgramTest[,1], 
-                positive = "Positive",  dnn = c("Prediction", "True"))
 
 # Variables to compute the evaluation metrics
-n2 = sum(Mypred_ksvm) # number of instances
-nc2 = nrow(Mypred_ksvm) # number of classes
-diag2 = diag(Mypred_ksvm) # number of correctly classified instances per class 
-rowsums2 = apply(Mypred_ksvm, 1, sum) # number of instances per class
-colsums2 = apply(Mypred_ksvm, 2, sum) # number of predictions per class
-p2 = rowsums2 / n2 # distribution of instances over the actual classes
-q2 = colsums2 / n2 # distribution of instances over the predicted classes
+resultado_ksvm_real<-evaluar(Mypred_ksvm_real)
 
-#Accuracy
-
-#It is defined as the fraction of instances that are correctly classified.
-
-accuracy2 = sum(diag2) / n2 
-accuracy2 
-##Per-class Precision, Recall, and F-1
-#Compute precision, recall, and the F-1 score.
-# since the class labels does not look uniformly distribuited??????
-#CHECKKK
-precision2 = diag2 / colsums2 
-recall2 = diag2 / rowsums2 
-f12 = 2 * precision2 * recall2 / (precision2 + recall2) 
-data.frame(precision2, recall2, f12) 
-
-
-
-
-
-
+CrossTable(pred_ksvm_real, NgramTest_real[,1], prop.chisq = FALSE, prop.t = FALSE, dnn = c('predicted', 'actual'))
