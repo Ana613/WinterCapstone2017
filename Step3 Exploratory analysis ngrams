@@ -4,7 +4,6 @@ library(data.table)
 library(qdap) # Quantitative analysis  
 library(qdapDictionaries) 
 library(magrittr)
-library(dplyr) # Data wrangling, pipe operator %>%(). 
 library(RColorBrewer) # Generate palette of colours for plots.
 library(Rcpp)
 library(ggplot2) # Plot word frequencies. 
@@ -14,29 +13,127 @@ library(wordcloud)
 library(RWeka)
 library(SnowballC)
 library(caret)
-#library(rminer)
 library(e1071)
 library(kernlab)
 library(party)
 library(FSelector)
 library(plyr)
 require(plyr)
+library(dplyr) # Data wrangling, pipe operator %>%().
 library(class)
 library(stringr)
-library(wordcloud)
 library(graph)
 require(grid)
+library(stringr)
+# the library(Rgraphviz)  Correlation plots is not available in CRAN
+# In order to print it used a bioconductor
+# Rgraphviz (Hansen et al., 2016) from the BioConductor repository for R 
+# (bioconductor.org) is used to plot the network graph that displays
+# the correlation between chosen words in the corpus. 
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("Rgraphviz")
+
 #It can achieve many interesting text analyses 
 #based on the relationships between words.
-#data to use corpus.tmp
-#LEarning ngram, 2gram, 3gram and 4gram
+#create data corpus.tmp
+#Learning ngram, 2gram, 3gram and 4gram
 
-clean_train<-read.csv(file="C://clean_train.csv"
-                       ,header=T, stringsAsFactors = FALSE)
+# Create a data frame holding the 5 data frame and clean it
+#Real Estate data
+#Create an indice for every dataframe
+RS_etobicoke$indice<-factor(1:2000)
+RS_highpark$indice<-factor(1:2000)
+RS_toronto$indice<-factor(1:2000)
+RS_eastyork$indice<-factor(1:2000)
+RS_northyork$indice<-factor(1:2000)
+
+#Create train with 70% of data and test with 30% of data on every data frames
+#RS_etobicoke
+
+rn_train_et <- sample(nrow(RS_etobicoke), floor(nrow(RS_etobicoke)*0.7))
+train_et <- RS_etobicoke[rn_train_et,]
+test_et <- RS_etobicoke[-rn_train_et,]
+
+dim(train_et)
+dim(test_et)
+
+#RS_highpark
+
+rn_train_hp <- sample(nrow(RS_highpark), floor(nrow(RS_highpark)*0.7))
+train_hp <- RS_highpark[rn_train_hp,]
+test_hp <- RS_highpark[-rn_train_hp,]
+
+dim(train_hp)
+dim(test_hp)
+
+#RS_toronto
+
+rn_train_to <- sample(nrow(RS_toronto), floor(nrow(RS_toronto)*0.7))
+train_to <- RS_toronto[rn_train_to,]
+test_to <- RS_toronto[-rn_train_to,]
+
+nrow(train_to)
+nrow(test_to)
+
+#RS_eastyork
+
+rn_train_ey <- sample(nrow(RS_eastyork), floor(nrow(RS_eastyork)*0.7))
+train_ey <- RS_eastyork[rn_train_ey,]
+test_ey <- RS_eastyork[-rn_train_ey,]
+
+nrow(train_ey)
+nrow(test_ey)
+
+#RS_northyork
+
+rn_train_ny <- sample(nrow(RS_northyork), floor(nrow(RS_northyork)*0.7))
+train_ny <- RS_northyork[rn_train_ny,]
+test_ny <- RS_northyork[-rn_train_ny,]
+
+nrow(train_ny)
+nrow(test_ny)
+
+#Join in a whole data frame the 5 training data and clean them
+RS_total_train= rbind(train_et, train_hp, train_to, train_ey, train_ny)
+attach(RS_total_train)
+RS_clean_train <- subset(RS_total_train, select = -c(indice))
+#Function to cleanText
+RS_clean_train<-as.data.frame(sapply(RS_clean_train,CleanText))
+RS_clean_train<-cbind(RS_clean_train,indice)
+class(RS_clean_train)
+lapply(RS_clean_train, class)
+
+#Keep a copy in the disk
+write.csv(RS_clean_train, file="C:/Users/../RS_clean_train.csv")
 
 
-clean_train<- subset(clean_train, select = -c(X))
+RS_clean_train$location<-factor(RS_clean_train$location)
+RS_clean_train$text<-lapply(RS_clean_train$text, iconv,from ="ISO-8859-15", to="UTF-8")
+RS_clean_train$indice<-as.factor(RS_clean_train$indice) 
 
+
+class(RS_clean_train)
+lapply(RS_clean_train, class)
+nrow(RS_clean_train)
+
+#Testing data
+RS_total_test= rbind(test_et, test_hp, test_to, test_ey, test_ny)
+attach(RS_total_test)
+RS_clean_test<- subset(RS_total_test, select = -c(indice))
+#Function to cleanText
+RS_clean_test<-as.data.frame(sapply(RS_clean_test,CleanText))
+RS_clean_test<-cbind(RS_clean_test,indice)
+class(RS_clean_test)
+lapply(RS_clean_test, class)
+
+RS_clean_test$location<-factor(RS_clean_test$location)
+RS_clean_test$text<-lapply(RS_clean_test$text, iconv,from ="ISO-8859-15", to="UTF-8")
+RS_clean_test$indice<-as.factor(RS_clean_test$indice) 
+
+class(RS_clean_test)
+lapply(RS_clean_test, class)
+
+#gram functions from 1 -4
 UnigramTokenizer<-function(x){ 
   NGramTokenizer(x, Weka_control(min=1, max =1))
 }
@@ -51,36 +148,65 @@ QuadgramTokenizer<-function(x){
   NGramTokenizer(x, Weka_control(min=4, max =4))
 }
 
-class(clean_train$text)
-doc.vec <- VectorSource(clean_train$text)
-corpus<-Corpus(doc.vec)
+# Create text document collection or corpus and 
+#  Preprocessing steps
 
+Cuerpo <- function(x,a) {
+  doc.vec <- VectorSource(x)
+  corpus<-Corpus(doc.vec)
+  corpus.tmp <- tm_map(corpus, removePunctuation)
+  corpus.tmp <- tm_map(corpus.tmp, stripWhitespace)
+  corpus.tmp <- tm_map(corpus.tmp,  content_transformer(tolower))
+  if (a == "Real")
+  {
+    corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                     "real","estate","property","realestate",
+                                                     "toronto","torontos",
+                                                     "properti", "estat",
+                                                     "canadaeduaubcedubuaeduaubcedubua"))
+  }  else { 
+    if (a == "Realtor") {
+      corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
+                                                       "gt","realtor","toronto",
+                                                       "torontos", "realtormag"))
+    }
+  }
+  
+  #remove own words that are highly repeated as well as on-sense word
+  ##length(stopwords("english"))
+  #stopwords("english") #Learn which are the stopwords
+  toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
+  corpus.tmp <- tm_map(corpus.tmp, toString, "accredited mortgage professional", "amp")
+  corpus.tmp <- tm_map(corpus.tmp, toString, "average", "ave") 
+  corpus.tmp<- tm_map(corpus.tmp, toString, "home price", "hp")
+  corpus.tmp<- tm_map(corpus.tmp, toString, "standard", "st")
+  corpus.tmp <- tm_map(corpus.tmp, removeNumbers)
+  #Stemming uses an algorithm that removes common word endings for English words, 
+  #such as "es", "ed" and "'s".
+  corpus.tmp <- tm_map(corpus.tmp, stemDocument, language="en")
+  corpus.tmp <- tm_map(corpus.tmp, PlainTextDocument)
+  
+  return(corpus.tmp)
+}
 
-corpus.tmp <- tm_map(corpus, removePunctuation)
-corpus.tmp <- tm_map(corpus.tmp, stripWhitespace)
-corpus.tmp <- tm_map(corpus.tmp,  content_transformer(tolower))
-corpus.tmp <- tm_map(corpus.tmp, removeWords,  c(stopwords("english"),
-                                                 "real","estate","property","realestate","toronto","torontos",
-                                                 "properti", "estat",
-                                                 "canadaeduaubcedubuaeduaubcedubua"))
-#remove own words that are highly repeated as well as on-sense word
-length(stopwords("english"))
-stopwords("english") #Learn which are the stopwords
-#change some Acronyms industry related using speci???c transformations
-toString <- content_transformer(function(x, from, to) gsub(from, to, x)) 
-corpus.tmp <- tm_map(corpus.tmp, toString, "accredited mortgage professional", "amp")
-corpus.tmp <- tm_map(corpus.tmp, toString, "average", "ave") 
-corpus.tmp<- tm_map(corpus.tmp, toString, "home price", "hp")
-corpus.tmp<- tm_map(corpus.tmp, toString, "standard", "st")
+#Call function Cuerpo to create the corpus
+class(RS_clean_train$text)
+corpus.tmp<-Cuerpo(RS_clean_train$text,"Real")
+class(corpus.tmp)
+inspect(corpus.tmp[1:3])
 
-corpus.tmp <- tm_map(corpus.tmp, removeNumbers)
-#Stemming uses an algorithm that removes common word endings for English words, 
-#such as "es", "ed" and "'s".
-corpus.tmp <- tm_map(corpus.tmp, stemDocument, language="en")
-corpus.tmp <- tm_map(corpus.tmp, PlainTextDocument)
+#Function to extract a specific row from corpus
+checkDocument <- function(d, n) {d %>% extract2(n) %>% as.character() %>% writeLines()} 
+writeLines(as.character(corpus.tmp[[1]]))
+checkDocument(corpus.tmp, 10)
+checkDocument(corpus.tmp, 25)
+class(corpus.tmp)
+length(corpus.tmp)
+str(corpus.tmp)
+class(corpus.tmp[[1]])
 
-
-
+#Create Documen Term matrix (row-colum format) using their respective grams
+#Call function previous declared
 dtmUni <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = UnigramTokenizer))
 dtmBi  <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = BigramTokenizer))
 dtmTri <- DocumentTermMatrix(corpus.tmp, control = list(tokenize = TrigramTokenizer))
@@ -91,10 +217,13 @@ dim(dtmBi)
 dim(dtmTri)
 dim(dtmQuad)
 
-dtmUni <- removeSparseTerms(dtmUni, 0.98)
-dtmBi  <-  removeSparseTerms(dtmBi , 0.98)
-dtmTri <- removeSparseTerms(dtmTri, 0.98)
-dtmQuad <- removeSparseTerms(dtmQuad, 0.98)
+class(dtmUni)
+
+#Sparce the DTM
+dtmUni <- removeSparseTerms(dtmUni, 0.99)
+dtmBi  <-  removeSparseTerms(dtmBi , 0.99)
+dtmTri <- removeSparseTerms(dtmTri, 0.99)
+dtmQuad <- removeSparseTerms(dtmQuad, 0.99)
 
 dim(dtmUni)
 dim(dtmBi)
@@ -121,11 +250,11 @@ freq.tri <- sort(freq.tri, decreasing = TRUE)
 freq.quad <- sort(freq.quad, decreasing = TRUE)
 
 
-# Create the top 40 data frames from the matrices
-df.freq.uni <- data.frame("word"=names(head(freq.uni,40)), "Frequency"=head(freq.uni,40))
-df.freq.bi  <- data.frame("word"=names(head(freq.bi,40)), "Frequency"=head(freq.bi,40))
-df.freq.tri <- data.frame("word"=names(head(freq.tri,40)), "Frequency"=head(freq.tri,40))
-df.freq.quad <- data.frame("word"=names(head(freq.quad,40)), "Frequency"=head(freq.quad,40))
+# Create the top 30 data frames from the matrices
+df.freq.uni <- data.frame("word"=names(head(freq.uni,30)), "Frequency"=head(freq.uni,30))
+df.freq.bi  <- data.frame("word"=names(head(freq.bi,30)), "Frequency"=head(freq.bi,30))
+df.freq.tri <- data.frame("word"=names(head(freq.tri,30)), "Frequency"=head(freq.tri,30))
+df.freq.quad <- data.frame("word"=names(head(freq.quad,30)), "Frequency"=head(freq.quad,30))
 
 # Reorder levels for better plotting
 df.freq.uni$Term1 <- reorder(df.freq.uni$word, df.freq.uni$Frequency)
@@ -135,37 +264,37 @@ df.freq.quad$Term1 <- reorder(df.freq.quad$word, df.freq.quad$Frequency)
 
 #Bar Plots
 p1 <- ggplot(df.freq.uni, aes(x = Term1, y = Frequency)) +
-      geom_bar(stat = "identity", color="gray55", fill="orange") +
-      geom_text(data=df.freq.uni,aes(x=Term1,y=-2000,label=Frequency),vjust=0, size=3) +
-      xlab("Words") + ylab("Count") + ggtitle("Top 40 UniGram Tokenized Word Frequency") +
-      theme(plot.title = element_text(lineheight=.8, face="bold")) +
-      coord_flip()
+  geom_bar(stat = "identity", color="gray55", fill="orange") +
+  geom_text(data=df.freq.uni,aes(x=Term1,y=-250,label=Frequency),vjust=0, size=3) +
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 UniGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
 p1
 
 p2 <- ggplot(df.freq.bi, aes(x = Term1, y = Frequency)) +
-      geom_bar(stat = "identity", color="gray55", fill="blue2") +
-      geom_text(data=df.freq.bi,aes(x=Term1,y=-250,label=Frequency),vjust=0, size=3) +
-      xlab("Words") + ylab("Count") + ggtitle("Top 40 BiGram Tokenized Word Frequency") +
-      theme(plot.title = element_text(lineheight=.8, face="bold")) +
-      coord_flip()
+  geom_bar(stat = "identity", color="gray55", fill="blue2") +
+  geom_text(data=df.freq.bi,aes(x=Term1,y=-250,label=Frequency),vjust=0, size=3) +
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 BiGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
 
 p2
 
 p3 <- ggplot(df.freq.tri, aes(x = Term1, y = Frequency)) +
-      geom_bar(stat = "identity", color="gray55", fill="darkgreen") +
-      geom_text(data=df.freq.tri,aes(x=Term1,y=-25,label=Frequency),vjust=0, size=3) +  
-      xlab("Words") + ylab("Count") + ggtitle("Top 40 TriGram Tokenized Word Frequency") +
-      theme(plot.title = element_text(lineheight=.8, face="bold")) +
-      coord_flip()
+  geom_bar(stat = "identity", color="gray55", fill="darkgreen") +
+  geom_text(data=df.freq.tri,aes(x=Term1,y=-25,label=Frequency),vjust=0, size=3) +  
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 TriGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
 
 p3
 
 p4 <- ggplot(df.freq.quad, aes(x = Term1, y = Frequency)) +
-      geom_bar(stat = "identity", color="gray55", fill="gold") +
-      geom_text(data=df.freq.quad,aes(x=Term1,y=-3,label=Frequency),vjust=0, size=3) +  
-      xlab("Words") + ylab("Count") + ggtitle("Top 40 QuadGram Tokenized Word Frequency") +
-      theme(plot.title = element_text(lineheight=.8, face="bold")) +
-      coord_flip()
+  geom_bar(stat = "identity", color="gray55", fill="gold") +
+  geom_text(data=df.freq.quad,aes(x=Term1,y=-3,label=Frequency),vjust=0, size=3) +  
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 QuadGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
 
 p4
 
@@ -201,3 +330,727 @@ wordcloud(words = df.freq.quad$Term1,
           rot.per=0.35,
           use.r.layout=FALSE,
           colors=brewer.pal(8, "Dark2"))
+
+
+##########################################################################
+#Realtor data
+
+#Create an indice for every dataframe
+Realtor_etobicoke$indice<-factor(1:nrow(Realtor_etobicoke))
+Realtor_highpark$indice<-factor(1:nrow(Realtor_highpark))
+Realtor_toronto$indice<-factor(1:nrow(Realtor_toronto))
+Realtor_eastyork$indice<-factor(1:nrow(Realtor_eastyork))
+Realtor_northyork$indice<-factor(1:nrow(Realtor_northyork))
+
+#Create train with 70% of data and test with 30% of data on every data frames
+#Realtor_etobicoke
+rn_train_et_e <- sample(nrow(Realtor_etobicoke), floor(nrow(Realtor_etobicoke)*0.7))
+train_et_e <- Realtor_etobicoke[rn_train_et_e,]
+test_et_e <- Realtor_etobicoke[-rn_train_et_e,]
+
+dim(train_et_e)
+dim(test_et_e)
+
+#Realtor_highpark
+
+rn_train_hp_e <- sample(nrow(Realtor_highpark), floor(nrow(Realtor_highpark)*0.7))
+train_hp_e <- Realtor_highpark[rn_train_hp_e,]
+test_hp_e<- Realtor_highpark[-rn_train_hp_e,]
+
+dim(train_hp_e)
+dim(test_hp_e)
+
+#Realtor_toronto
+
+rn_train_to_e <- sample(nrow(Realtor_toronto), floor(nrow(Realtor_toronto)*0.7))
+train_to_e <- Realtor_toronto[rn_train_to_e,]
+test_to_e <- Realtor_toronto[-rn_train_to_e,]
+
+nrow(train_to_e)
+nrow(test_to_e)
+
+#Realtor_eastyork
+
+rn_train_ey_e <- sample(nrow(Realtor_eastyork), floor(nrow(Realtor_eastyork)*0.7))
+train_ey_e <- Realtor_eastyork[rn_train_ey_e,]
+test_ey_e<- Realtor_eastyork[-rn_train_ey_e,]
+
+nrow(train_ey_e)
+nrow(test_ey_e)
+
+#RS_northyork
+
+rn_train_ny_e <- sample(nrow(Realtor_northyork), floor(nrow(Realtor_northyork)*0.7))
+train_ny_e<- Realtor_northyork[rn_train_ny_e,]
+test_ny_e <- Realtor_northyork[-rn_train_ny_e,]
+
+nrow(train_ny_e)
+nrow(test_ny_e)
+
+#Join in a whole data frame the 5 training data and clean them
+Realtor_total_train= rbind(train_et_e, train_hp_e, train_to_e, train_ey_e, train_ny_e)
+attach(Realtor_total_train)
+Realtor_clean_train <- subset(Realtor_total_train, select = -c(indice))
+#Function to cleanText
+Realtor_clean_train<-as.data.frame(sapply(Realtor_clean_train,CleanText))
+Realtor_clean_train<-cbind(Realtor_clean_train,indice)
+class(Realtor_clean_train)
+lapply(Realtor_clean_train, class)
+
+#Keep a copy in the disk
+clean_train_realtor<-data.frame(Realtor_clean_train)
+write.csv(clean_train_realtor, file="C:/Users/../clean_train_realtor.csv")
+
+
+Realtor_clean_train$location<-factor(Realtor_clean_train$location)
+Realtor_clean_train$text<-lapply(Realtor_clean_train$text, iconv,from ="ISO-8859-15", to="UTF-8")
+Realtor_clean_train$indice<-as.factor(Realtor_clean_train$indice) 
+
+
+class(Realtor_clean_train)
+lapply(Realtor_clean_train, class)
+
+#Testing data
+Realtor_total_test= rbind(test_et_e, test_hp_e, test_to_e, test_ey_e, test_ny_e)
+attach(Realtor_total_test)
+Realtor_clean_test<- subset(Realtor_total_test, select = -c(indice))
+#Function to cleanText
+Realtor_clean_test<-as.data.frame(sapply(Realtor_clean_test,CleanText))
+Realtor_clean_test<-cbind(Realtor_clean_test,indice)
+class(Realtor_clean_test)
+lapply(Realtor_clean_test, class)
+
+Realtor_clean_test$location<-factor(Realtor_clean_test$location)
+Realtor_clean_test$text<-lapply(Realtor_clean_test$text, iconv,from ="ISO-8859-15", to="UTF-8")
+Realtor_clean_test$indice<-as.factor(Realtor_clean_test$indice) 
+
+class(Realtor_clean_test)
+lapply(Realtor_clean_test, class)
+
+#Call the Function to create corpus and  Preprocessing
+# steps
+class(Realtor_clean_train$text)
+corpus_real.tmp<-Cuerpo(Realtor_clean_train$text,"Realtor")
+class(corpus_real.tmp)
+inspect(corpus_real.tmp[1:3])
+
+writeLines(as.character(corpus_real.tmp[[1]]))
+checkDocument(corpus_real.tmp, 10)
+checkDocument(corpus_real.tmp, 25)
+class(corpus_real.tmp)
+length(corpus_real.tmp)
+str(corpus_real.tmp)
+class(corpus_real.tmp)
+
+dim(dtmUni_r)
+dim(dtmBi_r)
+dim(dtmTri_r)
+dim(dtmQuad_r)
+#Sparce document term matrix
+dtmUni_r <- removeSparseTerms(dtmUni_r, 0.99)
+dtmBi_r  <-  removeSparseTerms(dtmBi_r , 0.99)
+dtmTri_r <- removeSparseTerms(dtmTri_r, 0.99)
+dtmQuad_r <- removeSparseTerms(dtmQuad_r, 0.99)
+
+dim(dtmUni_r)
+dim(dtmBi_r)
+dim(dtmTri_r)
+dim(dtmQuad_r)
+
+#inspect
+inspect(dtmUni_r[1:3,1:5])
+inspect(dtmBi_r[1:3,1:3])
+inspect(dtmTri_r[1:3,1:3])
+inspect(dtmQuad_r[1:3,1:3])
+
+
+# Term frequency
+freq.uni_r <- colSums(as.matrix(dtmUni_r))
+freq.bi_r  <- colSums(as.matrix(dtmBi_r))
+freq.tri_r <- colSums(as.matrix(dtmTri_r))
+freq.quad_r <- colSums(as.matrix(dtmQuad_r))
+
+##sort
+freq.uni_r <- sort(freq.uni_r, decreasing = TRUE)
+freq.bi_r  <- sort(freq.bi_r, decreasing = TRUE)
+freq.tri_r <- sort(freq.tri_r, decreasing = TRUE)
+freq.quad_r <- sort(freq.quad_r, decreasing = TRUE)
+
+
+# Create the top 30 data frames from the matrices
+df.freq.uni_r <- data.frame("word"=names(head(freq.uni_r,30)), "Frequency"=head(freq.uni_r,30))
+df.freq.bi_r  <- data.frame("word"=names(head(freq.bi_r,30)), "Frequency"=head(freq.bi_r,30))
+df.freq.tri_r <- data.frame("word"=names(head(freq.tri_r,30)), "Frequency"=head(freq.tri_r,30))
+df.freq.quad_r <- data.frame("word"=names(head(freq.quad_r,30)), "Frequency"=head(freq.quad_r,30))
+
+# Reorder levels for better plotting
+df.freq.uni_r$Term1 <- reorder(df.freq.uni_r$word, df.freq.uni_r$Frequency)
+df.freq.bi_r$Term1  <- reorder(df.freq.bi_r$word, df.freq.bi_r$Frequency)
+df.freq.tri_r$Term1 <- reorder(df.freq.tri_r$word, df.freq.tri_r$Frequency)
+df.freq.quad_r$Term1 <- reorder(df.freq.quad_r$word, df.freq.quad_r$Frequency)
+
+#Bar Plots
+p1 <- ggplot(df.freq.uni_r, aes(x = Term1, y = Frequency)) +
+  geom_bar(stat = "identity", color="gray55", fill="orange") +
+  geom_text(data=df.freq.uni_r,aes(x=Term1,y=-250,label=Frequency),vjust=0, size=3) +
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 UniGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
+p1
+
+p2 <- ggplot(df.freq.bi_r, aes(x = Term1, y = Frequency)) +
+  geom_bar(stat = "identity", color="gray55", fill="blue2") +
+  geom_text(data=df.freq.bi_r,aes(x=Term1,y=-50,label=Frequency),vjust=0, size=3) +
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 BiGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
+
+p2
+
+p3 <- ggplot(df.freq.tri_r, aes(x = Term1, y = Frequency)) +
+  geom_bar(stat = "identity", color="gray55", fill="darkgreen") +
+  geom_text(data=df.freq.tri_r,aes(x=Term1,y=-25,label=Frequency),vjust=0, size=3) +  
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 TriGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
+
+p3
+
+p4 <- ggplot(df.freq.quad_r, aes(x = Term1, y = Frequency)) +
+  geom_bar(stat = "identity", color="gray55", fill="gold") +
+  geom_text(data=df.freq.quad_r,aes(x=Term1,y=-3,label=Frequency),vjust=0, size=3) +  
+  xlab("Words") + ylab("Count") + ggtitle("Top 30 QuadGram Tokenized Word Frequency") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  coord_flip()
+
+p4
+
+#Word Clouds
+
+wordcloud(words = df.freq.uni_r$Term1,
+          freq = df.freq.uni_r$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.bi_r$Term1,
+          freq = df.freq.bi_r$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.tri_r$Term1,
+          freq = df.freq.tri_r$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+
+wordcloud(words = df.freq.quad_r$Term1,
+          freq = df.freq.quad_r$Frequency,
+          random.order=FALSE,
+          rot.per=0.35,
+          use.r.layout=FALSE,
+          colors=brewer.pal(8, "Dark2"))
+
+#########################################################################
+##For Real Estate data
+
+#Use corpus.tmp to generate 1_gram, 2_gram, 3_gram and 4_gram in one 
+##Document Term Matrix
+# -->> 1-2-3 and 4 grams 
+
+options(mc.cores =1)
+
+inspect(corpus.tmp[1:3])
+#A document should be the row where is the tweet
+#Each document is treated as a separate entity or record.
+corpus.tmp #It has 7000 documents
+#inspect(corpus.tmp[1])
+# Function to Check inside of the document
+checkDocument(corpus.tmp, 1)
+checkDocument(corpus.tmp, 5)
+class(corpus.tmp)
+length(corpus.tmp)
+str(corpus.tmp)
+class(corpus.tmp[[1]])
+class(corpus.tmp[[5]])
+##summary(corpus.tmp)
+
+# Split a string into a n-gram with min and max gram
+# NGramTokenizer is a function that splits strings into n-grams
+# with  given minimal and maximal numbers of grams.
+# Ngram from 1 up to 4 grams
+
+NgramTokenizer<-function(x){ 
+  NGramTokenizer(x, Weka_control(min=1, max =4))
+}
+
+#The weighting used is term frequency
+#A document term matrix is a matrix with documents as the rows
+#and terms(words) as the columns and a count of the frequency of words as 
+#the cells of the matrix. We use DocumentTermMatrix() to create the matrix: 
+#It is done by two differents ways, one just using the corpus,
+#the second one with the n-grams to create corpus
+
+train_dtm_ngram<-DocumentTermMatrix(corpus.tmp, control =list(tokenize = NgramTokenizer))
+train_dtm_docuM<-DocumentTermMatrix(corpus.tmp)
+
+dim(train_dtm_ngram)
+dim(train_dtm_docuM) #less columns columns of one token
+
+class(train_dtm_ngram)
+class(train_dtm_docuM)
+
+inspect(train_dtm_ngram[1:3,1:5])
+inspect(train_dtm_docuM[1:3,1:5])
+
+# Exploring the Document Term Matrix
+# Get the term frequencies as a vector by converting 
+# the document term matrix into a matrix and summing the column counts
+
+#For DTM using ngram
+freq_ngram <- colSums(as.matrix(train_dtm_ngram))
+head(freq_ngram)
+length(freq_ngram)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_ngram<- order(freq_ngram)
+# Least frequent terms
+freq_ngram[head(ord_ngram)]
+# Most frequent terms
+freq_ngram[tail(ord_ngram)]
+
+
+#DTM with corpus
+freq_docuM <- colSums(as.matrix(train_dtm_docuM))
+#freq_docuM
+length(freq_docuM)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_docuM<- order(freq_docuM)
+# Least frequent terms
+freq_docuM[head(ord_docuM)]
+# Most frequent terms
+freq_docuM[tail(ord_docuM)]
+
+# Distribution of Term Frequencies
+# Frequency of frequencies. 
+#For ngrams less frequency table
+head(table(freq_ngram), 15)
+#In ngram there are 10842 terms that occur just once.
+
+#For ngram most frequency table
+tail(table(freq_ngram), 15)
+#ngram, one term occurs 1463
+
+#For docuM less frequency table
+head(table(freq_docuM), 15)
+#In docuM there are 829 terms that occur just once
+
+#For docuM most frequency table
+tail(table(freq_docuM), 15)
+#In docuM there are one term that occur 1436 times
+
+#Quantitative Analysis of Text (Most frequent letter used in train data)
+#Summarize a list of words
+#Extract the shorter terms from each of the documents into one long word list.
+#Convert train_dtm_docuM  to  matrix, 
+#it will use the train data before sparce
+# extract the column names (the terms) 
+#and retain those shorter than 25 characters. 
+
+train_words <- train_dtm_docuM %>%
+  as.matrix %>% 
+  colnames %>% 
+  (function(x) x[nchar(x) < 25])
+
+class(train_words)
+length(train_words)
+head(train_words, 15)
+mean(nchar(words))
+summary(nchar(train_words))
+table(nchar(train_words))
+#Generate freq, cum freq, percent and cum percent
+dist_tab(nchar(train_words))
+
+# Plot train_words
+# The vertical line shows the mean length of words. 
+
+data.frame(nletters=nchar(train_words)) %>% 
+  ggplot(aes(x=nletters)) + 
+  geom_histogram(binwidth=1) + 
+  geom_vline(xintercept=mean(nchar(words)), colour="green", size=1, alpha=.8) +
+  labs(x="Number of Letters", y="Number of Words")
+
+# Check about the most frequently letters in train_words
+# Transform the vector of words into a list of letters,
+# construct a frequency count
+# split the words into characters using str split() from stringr
+# remove the rst string (an empty string) from each of the results (using sapply()). 
+# Reduce the result into a simple vector, using unlist(), 
+# Generate a data frame recording the letter frequencies, using dist tab() from qdap.
+# Plot the letter proportions. 
+library(stringr)
+
+train_words %>% 
+  str_split("") %>%
+  sapply(function(x) x[-1]) %>% 
+  unlist %>% 
+  dist_tab %>% 
+  mutate(Letter=factor(toupper(interval), 
+                       levels=toupper(interval[order(freq)]))) %>% 
+  ggplot(aes(Letter, weight=percent)) +
+  geom_bar() + 
+  coord_flip() +
+  labs(y="Proportion") +
+  scale_y_continuous(breaks=seq(0, 12, 2), 
+                     label=function(x) paste0(x, "%"),expand=c(0,0), limits=c(0,12))
+
+
+dim(train_dtm_ngram)
+dim(train_dtm_docuM)
+
+
+inspect(train_dtm_ngram[1:6,1:6])
+inspect(train_dtm_docuM[1:3,1:5])
+
+#Check the data for ngram
+freq_ngram <- colSums(as.matrix(train_dtm_ngram))
+head(freq_ngram)
+length(freq_ngram)
+#Ordering the frequencies, list the most frequent terms 
+#and the least frequent terms
+ord_ngram<- order(freq_ngram)
+# Least frequent terms
+freq_ngram[head(ord_ngram)]
+# Most frequent terms
+freq_ngram[tail(ord_ngram)]
+table(freq_ngram)
+
+#Check the new data for docuM
+freq_docuM <- colSums(as.matrix(train_dtm_docuM))
+head(freq_docuM)
+length(freq_docuM)
+# Ordering the frequencies, list the most frequent terms 
+#and the least frequent terms
+ord_docuM<- order(freq_docuM)
+# Least frequent terms
+freq_docuM[head(ord_docuM)]
+# Most frequent terms
+freq_docuM[tail(ord_docuM)]
+table(freq_docuM)
+
+
+# Another way to familiarize with most frequent terms
+findFreqTerms(train_dtm_ngram, lowfreq=50)
+findFreqTerms(train_dtm_docuM, lowfreq=50)
+
+# Find association with a word specifying a correlation limit.
+# If two words appear together then the correlation would be 1.0 
+# and if they never appear together the correlation would be 0.0.
+# Thus the correlation is a measure which said 
+# how closely associated the words are in the corpus
+
+findAssocs(train_dtm_ngram, "tax", corlimit=0.6)
+findAssocs(train_dtm_docuM, "tax", corlimit=0.6)
+
+findAssocs(train_dtm_ngram, "foreign", corlimit=0.6)
+findAssocs(train_dtm_docuM, "foreign", corlimit=0.6)
+
+findAssocs(train_dtm_ngram, "buyer", corlimit=0.6)
+findAssocs(train_dtm_docuM, "buyer", corlimit=0.6)
+
+#plot correlations
+# plot the network graph that displays the correlation between chosen words in the corpus. 
+# Here we choose some of the more frequent words as the nodes and include links 
+#between words when they have at least a correlation of 0.5
+
+plot(train_dtm_docuM, terms=findFreqTerms(train_dtm_docuM, lowfreq=150)[1:20], corThreshold=0.5)
+plot(train_dtm_ngram, terms=findFreqTerms(train_dtm_ngram, lowfreq=150)[1:20], corThreshold=0.5)
+
+# Plot Word Frequencies
+# Count all the words in the corpus
+
+freq_01_docuM2 <- sort(colSums(as.matrix(train_dtm_docuM)), decreasing=TRUE) 
+head(freq_01_docuM2 , 13)
+
+class(freq_01_docuM2)
+
+#Create a data frame on the frequency
+word_freq <- data.frame(word=names(freq_01_docuM2), freq=freq_01_docuM2)
+head(word_freq)
+
+# Plot the frequency 
+
+subset(word_freq , freq>200) %>% 
+  ggplot(aes(word, freq)) +
+  geom_bar(stat="identity") + 
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+# Wordcloud 
+set.seed(123) 
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=30)
+set.seed(123)
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, max.words=100, scale=c(6, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=100)
+set.seed(123)
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=100, scale=c(7, .1), colors=brewer.pal(8, "RdBu"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=100,scale=c(7, .1), colors=brewer.pal(15, "RdYlGn"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=100, scale=c(5, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(142) 
+dark2 <- brewer.pal(6, "Dark2")
+wordcloud(names(freq_01_docuM2), freq_01_docuM2, min.freq_01_docuM2=100, rot.per=0.4, colors=dark2)
+
+#########################################################################
+##For Realtor data
+
+#Use corpus_real.tmp to generate 1_gram, 2_gram, 3_gram and 4_gram
+# -->> 1-2-3 and 4 grams 
+
+options(mc.cores =1)
+
+inspect(corpus_real.tmp[1:3])
+#A document should be the row where is the tweet
+#Each document is treated as a separate entity or record.
+corpus_real.tmp#It has 2445 documents
+#inspect(corpus_real.tmp[1])
+#Check inside of the document by using previous function
+checkDocument(corpus_real.tmp, 1)
+checkDocument(corpus_real.tmp, 5)
+class(corpus_real.tmp)
+length(corpus_real.tmp)
+str(corpus_real.tmp)
+class(corpus_real.tmp[[1]])
+##summary(corpus.tmp)
+
+# Split string into a n-gram with min using 1 and max using 4 grams
+# NGramTokenizer is a function that splits strings into n-grams
+# given minimal =1 and maximal = 4 number of grams.
+# Ngram from 1 up to 4 grams
+
+#The weighting used is term frequency
+#A document term matrix is a matrix with documents as the rows
+#and terms(words or collection of words) as the columns 
+#and a count of the frequency of words as 
+#the cells of the matrix. We use DocumentTermMatrix() to create the matrix: 
+#It is done by two differents ways, one just using the corpus,
+#the second one with the n-grams 
+
+train_dtm_ngram_real<-DocumentTermMatrix(corpus_real.tmp, control =list(tokenize = NgramTokenizer))
+train_dtm_docuM_real<-DocumentTermMatrix(corpus_real.tmp)
+
+dim(train_dtm_ngram_real)
+dim(train_dtm_docuM_real) #less columns columns of one token
+
+class(train_dtm_ngram_real)
+class(train_dtm_docuM_real)
+
+inspect(train_dtm_ngram_real[1:3,1:5])
+inspect(train_dtm_docuM_real[1:3,1:5])
+
+# Exploring the Document Term Matrix
+# Get the term frequencies as a vector by converting 
+# the document term matrix into a matrix and summing the column counts
+
+#For DTM using ngram
+freq_ngram_real <- colSums(as.matrix(train_dtm_ngram_real))
+head(freq_ngram_real)
+length(freq_ngram_real)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_ngram_real<- order(freq_ngram_real)
+# Least frequent terms
+freq_ngram_real[head(ord_ngram_real)]
+# Most frequent terms
+freq_ngram_real[tail(ord_ngram_real)]
+
+
+#DTM with corpus
+freq_docuM_real <- colSums(as.matrix(train_dtm_docuM_real))
+#freq_docuM
+length(freq_docuM_real)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_docuM_real<- order(freq_docuM_real)
+# Least frequent terms
+freq_docuM_real[head(ord_docuM_real)]
+# Most frequent terms
+freq_docuM_real[tail(ord_docuM_real)]
+
+# Distribution of Term Frequencies
+# Frequency of frequencies. 
+#For ngrams less frequency table
+head(table(freq_ngram_real), 15)
+#In ngram there are 10842 terms that occur just once.
+
+#For ngram most frequency table
+tail(table(freq_ngram_real), 15)
+#ngram, one term occurs 1463
+
+#For docuM less frequency table
+head(table(freq_docuM_real), 15)
+#In docuM there are 829 terms that occur just once
+
+#For docuM most frequency table
+tail(table(freq_docuM_real), 15)
+#In docuM there are one term that occur 1436 times
+
+#Quantitative Analysis of Text (Most frequent letter used in train data)
+#Summarize a list of words
+#Extract the shorter terms from each of the documents into one long word list.
+#Convert train_dtm_docuM  to  matrix, 
+#it will use the train data before sparce
+# extract the column names (the terms) 
+#and retain those shorter than 25 characters. 
+
+train_words_real <- train_dtm_docuM_real %>%
+  as.matrix %>% 
+  colnames %>% 
+  (function(x) x[nchar(x) < 25])
+
+class(train_words_real)
+length(train_words_real)
+head(train_words_real, 15)
+mean(nchar(words_real))
+summary(nchar(train_words_real))
+table(nchar(train_words_real))
+#Generate freq, cum freq, percent and cum percent
+dist_tab(nchar(train_words_real))
+
+# Plot train_words
+# The vertical line shows the mean length of words. 
+
+data.frame(nletters=nchar(train_words_real)) %>% 
+  ggplot(aes(x=nletters)) + 
+  geom_histogram(binwidth=1) + 
+  geom_vline(xintercept=mean(nchar(words)), colour="green", size=1, alpha=.8) +
+  labs(x="Number of Letters", y="Number of Words")
+
+# Check about the most frequently letters in train_words
+# Transform the vector of words into a list of letters,
+# construct a frequency count
+# split the words into characters using str split() from stringr
+# remove the ???rst string (an empty string) from each of the results (using sapply()). 
+# Reduce the result into a simple vector, using unlist(), 
+# we then generate a data frame recording the letter frequencies, using dist tab() from qdap.
+# We can then plot the letter proportions. 
+library(stringr)
+
+train_words_real %>% 
+  str_split("") %>%
+  sapply(function(x) x[-1]) %>% 
+  unlist %>% 
+  dist_tab %>% 
+  mutate(Letter=factor(toupper(interval), 
+                       levels=toupper(interval[order(freq)]))) %>% 
+  ggplot(aes(Letter, weight=percent)) +
+  geom_bar() + 
+  coord_flip() +
+  labs(y="Proportion") +
+  scale_y_continuous(breaks=seq(0, 12, 2), 
+                     label=function(x) paste0(x, "%"),expand=c(0,0), limits=c(0,12))
+
+dim(train_dtm_ngram_real)
+dim(train_dtm_docuM_real)
+
+
+inspect(train_dtm_ngram_real[1:6,1:6])
+inspect(train_dtm_docuM_real[1:3,1:5])
+
+#Check the data for ngram
+freq_ngram_real <- colSums(as.matrix(train_dtm_ngram_real))
+head(freq_ngram_real)
+length(freq_ngram_real)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_ngram_real<- order(freq_ngram_real)
+# Least frequent terms
+freq_ngram_real[head(ord_ngram_real)]
+# Most frequent terms
+freq_ngram_real[tail(ord_ngram_real)]
+table(freq_ngram_real)
+
+#Check the new data for docuM
+freq_docuM_real <- colSums(as.matrix(train_dtm_docuM_real))
+head(freq_docuM_real)
+length(freq_docuM_real)
+# By ordering the frequencies we can list the most frequent terms 
+#and the least frequent terms
+ord_docuM_real<- order(freq_docuM_real)
+# Least frequent terms
+freq_docuM_real[head(ord_docuM_real)]
+# Most frequent terms
+freq_docuM_real[tail(ord_docuM_real)]
+table(freq_docuM_real)
+
+
+# Another way to familiarize with most frequent terms
+findFreqTerms(train_dtm_ngram_real, lowfreq=50)
+findFreqTerms(train_dtm_docuM_real, lowfreq=50)
+
+# Find association with a word specifying a correlation limit.
+# If two words always appear together then the correlation would be 1.0 
+# and if they never appear together the correlation would be 0.0.
+# Thus the correlation is a measure of how closely associated the words are in the corpus
+
+findAssocs(train_dtm_ngram_real, "buyer", corlimit=0.6)
+findAssocs(train_dtm_docuM_real, "communiti", corlimit=0.6)
+
+findAssocs(train_dtm_ngram_real, "condo", corlimit=0.6)
+findAssocs(train_dtm_docuM_real, "thank", corlimit=0.6)
+
+findAssocs(train_dtm_ngram_real, "sell", corlimit=0.6)
+findAssocs(train_dtm_docuM_real, "commiss", corlimit=0.6)
+
+#plot correlations
+# plot the network graph that displays the correlation between chosen words in the corpus. 
+# Here we choose 10 of the more frequent words as the nodes and include links 
+#between words when they have at least a correlation of 0.5
+
+plot(train_dtm_docuM_real, terms=findFreqTerms(train_dtm_docuM_real, lowfreq=60)[1:25], corThreshold=0.6)
+plot(train_dtm_ngram_real, terms=findFreqTerms(train_dtm_ngram_real, lowfreq=60)[1:25], corThreshold=0.6)
+
+# Plot Word Frequencies
+# Count all the words in the corpus
+
+freq_01_docuM2_real <- sort(colSums(as.matrix(train_dtm_docuM_real)), decreasing=TRUE) 
+head(freq_01_docuM2_real , 13)
+
+class(freq_01_docuM2_real)
+
+#Create a data frame on the frequency
+word_freq_real <- data.frame(word=names(freq_01_docuM2_real), freq=freq_01_docuM2_real)
+head(word_freq_real)
+
+# Plot the frequency 
+
+subset(word_freq_real , freq>200) %>% 
+  ggplot(aes(word, freq)) +
+  geom_bar(stat="identity") + 
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+# Wordcloud 
+set.seed(123) 
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=30)
+set.seed(123)
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, max.words=100, scale=c(6, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=100)
+set.seed(123)
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=100, scale=c(7, .1), colors=brewer.pal(8, "RdBu"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=100, scale=c(7, .1), colors=brewer.pal(15, "RdYlGn"))
+set.seed(123)
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=100, scale=c(5, .1), colors=brewer.pal(6, "Dark2"))
+set.seed(123) 
+dark2 <- brewer.pal(6, "Dark2")
+wordcloud(names(freq_01_docuM2_real), freq_01_docuM2_real, min.freq_01_docuM2_real=100, rot.per=0.4, colors=dark2)
