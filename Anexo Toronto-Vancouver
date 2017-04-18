@@ -178,10 +178,11 @@ evaluar <- function(x) {
 }
 
 
+
 RS_toronto$indice<-factor(1:2000)
 RS_vancouver$indice<-factor(1:2000)
 
-#Create 10 times train(2000)2/3 and test(1000) 1/3 of data
+#Create 10 times train data with 0.7 of data and test data with 0.3 of data
 #then every one of those 10 is evaluated against both methods
 #Create a list of 10 confusion matrix to evaluate for Bayes and
 #A list of 10 confusion matrix for SVM
@@ -195,19 +196,19 @@ Mylist_ksvm<-as.list(0)
 
 #The x value create 10 columns with random  value to be used as
 # indice into train and test data
-x <- replicate(n = 10,expr = {sample(2000,1000)})
+x <- replicate(n = 10,expr = {sample(2000,600)})
 
 #Loop that will return 10 different confusion matrix 
 for (i in 1:10){
   v<- x[,i]
   
   #RS_vancouver
-  train_vc <- RS_vancouver[v,]
-  test_vc <- RS_vancouver[-v,]
+  train_vc <- RS_vancouver[-v,]
+  test_vc <- RS_vancouver[v,]
   
   #RS_toronto
-  train_to <- RS_toronto[v,]
-  test_to <- RS_toronto[-v,]
+  train_to <- RS_toronto[-v,]
+  test_to <- RS_toronto[v,]
   
   #Join train data in one data frame, clean and check data type
   RS_total_train= rbind(train_vc, train_to)
@@ -300,8 +301,7 @@ for (i in 1:10){
   false_pos[i]<-list(Mylist_naives[i][[1]][1,2])
   false_neg[i]<-list(Mylist_naives[i][[1]][2,1])
   true_neg[i]<-list(Mylist_naives[i][[1]][2,2])
-  
-}
+ }
 
 true_pos1<-mean(sapply(true_pos, mean))
 false_pos1<-mean(sapply(false_pos, mean))
@@ -317,8 +317,8 @@ rownames(my_final_Bayes)<-c("RStoronto","RSvancouver")
 colnames(my_final_Bayes)<-c("RStoronto","RSvancouver")
 my_final_Bayes 
 #Evaluate Bayes
-resultado<-evaluar(my_final_Bayes)
-resultado
+resultado_bayes<-evaluar(my_final_Bayes)
+resultado_bayes
 
 #For SVM
 true_pos2<-0
@@ -332,8 +332,7 @@ for (i in 1:10){
   false_pos2[i]<-list(Mylist_ksvm[i][[1]][1,2])
   false_neg2[i]<-list(Mylist_ksvm[i][[1]][2,1])
   true_neg2[i]<-list(Mylist_ksvm[i][[1]][2,2])
-  
-}
+ }
 
 true_pos13<-mean(sapply(true_pos2, mean))
 false_pos13<-mean(sapply(false_pos2, mean))
@@ -350,5 +349,6 @@ colnames(my_final_svm)<-c("RStoronto","RSvancouver")
 my_final_svm
 
 #Evaluate SVM
-resultado<-evaluar(my_final_svm)
-resultado
+resultado_svm<-evaluar(my_final_svm)
+resultado_svm
+
