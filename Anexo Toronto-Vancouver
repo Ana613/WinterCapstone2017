@@ -320,7 +320,7 @@ my_final_Bayes
 resultado_bayes<-evaluar(my_final_Bayes)
 resultado_bayes
 
-#For SVM
+#For KSVM
 true_pos2<-0
 false_pos2<-0
 false_neg2<-0
@@ -339,16 +339,16 @@ false_pos13<-mean(sapply(false_pos2, mean))
 false_neg13<-mean(sapply(false_neg2, mean))
 true_neg13<-mean(sapply(true_neg2, mean))
 
-my_final_svm <-matrix(c(round(true_pos13,0), 
+my_final_ksvm <-matrix(c(round(true_pos13,0), 
                         round(false_neg13,0),
                         round(false_pos13,0), 
                         round(true_neg13,0)), nrow=2,ncol=2)
-rownames(my_final_svm)<-c("RStoronto","RSvancouver")
-colnames(my_final_svm)<-c("RStoronto","RSvancouver")
+rownames(my_final_ksvm)<-c("RStoronto","RSvancouver")
+colnames(my_final_ksvm)<-c("RStoronto","RSvancouver")
 
-my_final_svm
+my_final_ksvm
 
-#Evaluate SVM
-resultado_svm<-evaluar(my_final_svm)
-resultado_svm
+#Evaluate KSVM
+resultado_ksvm<-evaluar(my_final_ksvm)
+resultado_ksvm
 
